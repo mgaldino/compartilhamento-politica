@@ -160,4 +160,10 @@ compartilhamento_3_estudos <- bind_rows(link1, link2, link3) %>%
                           if_else(link == 2, "estudo 1", "estudo 3")))
 glimpse(compartilhamento_3_estudos)
 
+# salva o banco em formato RDS
+saveRDS(compartilhamento_3_estudos, file= "Transformados/compartilhamento_3_estudos.rds")
+
+# para ler, basta
+compartilhamento_3_estudos <- readRDS("Transformados/compartilhamento_3_estudos.rds")
+
 
