@@ -174,6 +174,15 @@ compartilhamento_3_estudos <- bind_rows(link1, link2, link3) %>%
                           if_else(link == 2, "estudo 1", "estudo 3")))
 glimpse(compartilhamento_3_estudos)
 
+# algumas pessoas não escolheram "outros" em gênero, quando eram não-binário.
+# vou colocar outros no banco na coluna gênero para esses casos.
+
+compartilhamento_3_estudos <- compartilhamento_3_estudos %>%
+  mutate(genero = as.character(genero),
+         genero = if_else(grepl("binári", genero_especifico), "outros", genero),
+         genero = as.factor(genero))
+
+
 # salva o banco em formato RDS
 saveRDS(compartilhamento_3_estudos, file= "Transformados/compartilhamento_3_estudos.rds")
 
