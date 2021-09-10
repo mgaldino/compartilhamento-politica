@@ -14,16 +14,24 @@ library(readxl)
 # para importar no R, usando a biblioteca readxl
 
 here()
+
+# importa os dados dos três estudos
+
+# link 1 (estudo 2)
 TCC_Dados_Brutos_1 <- read_excel("Dados/TCC Dados Brutos.xlsx", 
                                sheet = "Link 1")
 
+# link 2 (estudo 1)
 TCC_Dados_Brutos_2 <- read_excel("Dados/TCC Dados Brutos.xlsx", 
                                  sheet = "Link 2")
-
+# link 3 (estudo 3)
 TCC_Dados_Brutos_3 <- read_excel("Dados/TCC Dados Brutos.xlsx", 
                                  sheet = "Link 3")
 
+# essa função renomeia as variáveis do banco e coloca em um formato bonito
 muda_nomes_variaveis1 <- function(df) {
+  if(!require(janitor) {install.packages("janitor")}) # instala o pacote janitor se não tiver instalado
+    
   df <- df %>%
     janitor::clean_names() %>%
     dplyr::slice(-1) %>% # remove primeira linha
@@ -53,7 +61,8 @@ muda_nomes_variaveis1 <- function(df) {
   return(df)
 }
 
-# link 2 e 3 tem mais variáveis, então a ordem muda. Aí criei outra função para mudar os nomes
+# link 2 e 3 tem mais variáveis (ip, create date etc.), então a ordem muda. Aí criei outra função para mudar os nomes
+# mas é basicamente a mesma coisa da primeira
 muda_nomes_variaveis2 <- function(df) {
   df <- df %>%
     janitor::clean_names() %>%
@@ -84,6 +93,7 @@ muda_nomes_variaveis2 <- function(df) {
   return(df)
 }
 
+# essa função adiciona a legenda das respostas (gênero, em vez de 1 e 2 e3, fica Homem, Mulher e outros e assim por diante)
 adicina_legenda_respostas <- function(df) {
   df <- df %>%
     mutate(idade = as.numeric(idade),
@@ -97,6 +107,7 @@ adicina_legenda_respostas <- function(df) {
   return(df)
 }
 
+# função que junta os dados ramificados, de bolsonaristas, lulistas e neutros
 empilha_Dados_ramificados <- function(df) {
   
   df_Bolsonaro <- df %>%
@@ -127,6 +138,7 @@ empilha_Dados_ramificados <- function(df) {
   return(df_junto)
 }
 
+# roda as três funções para cada estudo
 link1 <- muda_nomes_variaveis(TCC_Dados_Brutos_1)
 link1 <- adicina_legenda_respostas(link1)
 link1 <- empilha_Dados_ramificados(link1)
@@ -139,7 +151,7 @@ link3 <- muda_nomes_variaveis2(TCC_Dados_Brutos_3)
 link3 <- adicina_legenda_respostas(link3)
 link3 <-  empilha_Dados_ramificados(link3)
 
-
+# cria variáveis que não estão no banco link1 e coloca na mesma ordem que os bancos de link2 e link3
 link1 <- link1 %>%
   mutate(date_created = NA,
          date_modified = NA,
@@ -152,9 +164,11 @@ link1 <- link1 %>%
   relocate(any_of(c("date_created", "date_modified", "ip_address", "email_address",
                   "first_name", "last_name", "custom_1", "termo_de_consentimento")), .after=link)
 
+# corrige erro de digitação
 link1 <- link1 %>%
-  rename(score_narcissism = score_nascissism) # corrige erro de digitação
+  rename(score_narcissism = score_nascissism)
 
+# cria o banco final, empilhando os três estudos. E cria coluna estudo, que diz qual o estudo (em vez de apenas o link)
 compartilhamento_3_estudos <- bind_rows(link1, link2, link3) %>%
   mutate(estudo = if_else(link == 1, "estudo 2",
                           if_else(link == 2, "estudo 1", "estudo 3")))
@@ -163,7 +177,7 @@ glimpse(compartilhamento_3_estudos)
 # salva o banco em formato RDS
 saveRDS(compartilhamento_3_estudos, file= "Transformados/compartilhamento_3_estudos.rds")
 
-# para ler, basta
+# para ler, basta rodar (apontando para o diretório onde os dados estão. Dados processados eu salvo na pasta Transformados)
 compartilhamento_3_estudos <- readRDS("Transformados/compartilhamento_3_estudos.rds")
 
 
