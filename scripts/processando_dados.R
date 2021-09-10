@@ -6,9 +6,14 @@ library(here)
 library(data.table)
 library(janitor)
 library(stringr)
-here()
-
 library(readxl)
+
+# este comando, da biblioteca here, facilita que o direttório onde estão os dados não precisam ser escritos no script
+## como criei um projeto com repositório, ao rodar o comando here(), o r transforma o diretório default como o diretório do projeto
+## como sempre crio uma pasta Dados, onde armazendo os dados brusos, basta indicar essa pasta e o nome arquivo baixado do drive
+# para importar no R, usando a biblioteca readxl
+
+here()
 TCC_Dados_Brutos_1 <- read_excel("Dados/TCC Dados Brutos.xlsx", 
                                sheet = "Link 1")
 
