@@ -189,6 +189,15 @@ mutate(decisao_compartilhamento = if_else(grepl("Não", decisao_compartilhamento
                                            str_sub(decisao_compartilhamento, 45, end = 60)),
        decisao_compartilhamento = gsub("stas ", "", decisao_compartilhamento))
 
+# converte números armazenados como string (text) para numérico
+# converte strings que seriam fatores para fatores
+compartilhamento_3_estudos <- compartilhamento_3_estudos %>%
+  mutate(ladder = str_extract(ladder, "[0-9]+")) %>% # extra número (de 1 abaixo de todos e 10 acima de todos)
+  mutate(across(ladder:prostituicao, as.numeric),
+         across(psicotropicos:filiacao_partidaria, as.factor),
+         across(c(img_alinhamento, decisao_compartilhamento, participacao_estudo, estudo), as.factor))
+
+
 # salva o banco em formato RDS
 saveRDS(compartilhamento_3_estudos, file= "Transformados/compartilhamento_3_estudos.rds")
 
