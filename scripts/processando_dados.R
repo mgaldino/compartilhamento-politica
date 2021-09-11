@@ -30,7 +30,7 @@ TCC_Dados_Brutos_3 <- read_excel("Dados/TCC Dados Brutos.xlsx",
 
 # essa função renomeia as variáveis do banco e coloca em um formato bonito
 muda_nomes_variaveis1 <- function(df) {
-  if(!require(janitor) {install.packages("janitor")}) # instala o pacote janitor se não tiver instalado
+  if(!require(janitor)) {install.packages("janitor")} # instala o pacote janitor se não tiver instalado
     
   df <- df %>%
     janitor::clean_names() %>%
@@ -64,6 +64,7 @@ muda_nomes_variaveis1 <- function(df) {
 # link 2 e 3 tem mais variáveis (ip, create date etc.), então a ordem muda. Aí criei outra função para mudar os nomes
 # mas é basicamente a mesma coisa da primeira
 muda_nomes_variaveis2 <- function(df) {
+  if(!require(janitor)) {install.packages("janitor")}
   df <- df %>%
     janitor::clean_names() %>%
     dplyr::slice(-1) %>% # remove primeira linha
@@ -139,7 +140,7 @@ empilha_Dados_ramificados <- function(df) {
 }
 
 # roda as três funções para cada estudo
-link1 <- muda_nomes_variaveis(TCC_Dados_Brutos_1)
+link1 <- muda_nomes_variaveis1(TCC_Dados_Brutos_1)
 link1 <- adicina_legenda_respostas(link1)
 link1 <- empilha_Dados_ramificados(link1)
 
