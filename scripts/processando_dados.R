@@ -182,6 +182,11 @@ compartilhamento_3_estudos <- compartilhamento_3_estudos %>%
          genero = if_else(grepl("binári", genero_especifico), "outros", genero),
          genero = as.factor(genero))
 
+# ajusta decisão política para opção 1, opção 2 e não publicar
+compartilhamento_3_estudos <- compartilhamento_3_estudos %>%
+mutate(decisao_compartilhamento = if_else(grepl("Não", decisao_compartilhamento), decisao_compartilhamento, 
+                                           str_sub(decisao_compartilhamento, 45, end = 60)),
+       decisao_compartilhamento = gsub("stas ", "", decisao_compartilhamento))
 
 # salva o banco em formato RDS
 saveRDS(compartilhamento_3_estudos, file= "Transformados/compartilhamento_3_estudos.rds")
