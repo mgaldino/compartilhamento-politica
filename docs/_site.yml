@@ -1,5 +1,5 @@
 name: "Website-paper-compartilhamento"
-output_dir: "."
+output_dir: "docs"
 navbar:
   title: "Compartilhamento Politica"
   left:
