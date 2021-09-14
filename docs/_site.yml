@@ -1,0 +1,9 @@
+name: "Website-paper-compartilhamento"
+output_dir: "."
+navbar:
+  title: "Compartilhamento Politica"
+  left:
+    - text: "Analise descritiva"
+      href: index.html
+    - text: "About Me"
+      href: about.html
