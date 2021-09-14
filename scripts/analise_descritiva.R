@@ -3,6 +3,7 @@ library(here)
 library(dplyr)
 library(tidyr)
 library(ggplot2)
+library(janitor)
 
 
 here()
@@ -51,8 +52,6 @@ escol <- compartilhamento_3_estudos %>%
 
 # gráfico de barra de escolaridade
 
-x11() # meu r está com bug e o ggplot trava o R. Para não travar preciso rodar esse comando antes.
-# se seu R está funcionando, pode ignorar essa linha
 escol %>%
   ggplot(aes(y=perc_escolaridade, x=grau_de_escolaridade)) + geom_col() +
   coord_flip() + scale_y_continuous(labels = scales::percent) +
@@ -74,26 +73,143 @@ ideologia %>%
 
 # decisao versus politico de identificação
 compartilhamento_3_estudos %>%
-  filter(estudo == "estudo 1") %>%
   filter(!is.na(decisao_compartilhamento)) %>%
-  mutate(decisao_compartilhamento1 = if_else(grepl("Não", decisao_compartilhamento), decisao_compartilhamento, 
-                                             str_sub(decisao_compartilhamento, 45, end = 60)),
-         decisao_compartilhamento1 = gsub("stas ", "", decisao_compartilhamento1)) %>%
-  group_by(politico, decisao_compartilhamento1) %>%
+  group_by(estudo, politico, decisao_compartilhamento) %>%
   summarise(total = n()) %>%
-  pivot_wider(names_from = decisao_compartilhamento1, 
+  pivot_wider(names_from = decisao_compartilhamento, 
               values_from = total,
               values_fill = 0) %>%
   clean_names() %>%
+  ungroup() %>%
+  group_by(estudo) %>%
   mutate(total = nao_publicar_nenhuma_noticia + opcao_1 + opcao_2,
            prop_op1 = opcao_1 /total,
          prop_op2 = opcao_2/total,
          nenhuma = nao_publicar_nenhuma_noticia/total)
 
-compartilhamento_1_analise <- compartilhamento_3_estudos %>%
-  mutate(decisao_compartilhamento = factor(decisao_compartilhamento)) %>%
-  filter(estudo == "estudo 1") %>%
-  filter(!is.na(decisao_compartilhamento))
-  
+# Gênero influencia decisão de compartilhar?
+# estudo 1
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 1",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(decisao_compartilhamento)) + geom_bar() +
+  facet_grid(genero ~ politico)
+
+# estudo 2
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 2",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(decisao_compartilhamento)) + geom_bar() +
+  facet_grid(genero ~ politico)
 
 
+# estudo 3
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 3",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(decisao_compartilhamento)) + geom_bar() +
+  facet_grid(genero ~ politico)
+
+# idade e compartilhamento
+
+# estudo 1
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 1",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(col=decisao_compartilhamento, x=idade)) + geom_density()
+
+# opção 2 é bem maior entre mais jovens
+
+# estudo 2
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 2",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(col=decisao_compartilhamento, x=idade)) + geom_density()
+# opção 2 é bem maior entre mais jovens
+
+# estudo 3
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 3",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(col=decisao_compartilhamento, x=idade)) + geom_density()
+# único caso em que opção 2 não é maior entre mais jovens
+
+
+## scores 
+
+# estudo 1
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 1",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 1") +
+  facet_wrap(vars(politico), nrow = 2)
+
+# estudo 2
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 2",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 2") +
+  facet_wrap(vars(politico), nrow = 2)
+
+# estudo 3
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 3",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 3") +
+  facet_wrap(vars(politico), nrow = 2)
+
+
+
+
+## scores e decisão
+
+# estudo 1
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 1",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 1") +
+  facet_wrap(vars(decisao_compartilhamento, politico), nrow = 3)
+
+# estudo 2
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 2",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 2") +
+  facet_wrap(vars(decisao_compartilhamento, politico), nrow = 3)
+
+# estudo 3
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 3",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 3") +
+  facet_wrap(vars(decisao_compartilhamento, politico), nrow = 3)
