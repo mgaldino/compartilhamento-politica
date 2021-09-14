@@ -3,7 +3,13 @@ output_dir: "."
 navbar:
   title: "Compartilhamento Politica"
   left:
-    - text: "Analise descritiva"
+    - text: "Home"
       href: index.html
+    - text: "Analise exploratoria"
+      href: analise.html
     - text: "About Me"
       href: about.html
+output:
+  html_document:
+    theme: flatly
+    css: style.css
