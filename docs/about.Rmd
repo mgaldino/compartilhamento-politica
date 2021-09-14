@@ -1,5 +1,0 @@
----
-title: "About Me"
----
-
-This is the results for the paper. 

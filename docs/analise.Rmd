@@ -1,5 +1,0 @@
----
-title: "Analise exploratoria"
----
-
-Analise de dados. 

@@ -1,5 +1,0 @@
----
-title: "Compartilhamento Politica"
----
-
-Hello, World!
