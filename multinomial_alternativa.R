@@ -48,7 +48,7 @@ dat_l <- as.data.frame(compartilhamento1_l)
 
 f0 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode")
 f1 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + liberal_conservador")
-f2 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + liberal_conservador + score_narcisism + score_id_nac")
+f2 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + liberal_conservador + score_narcisism")
 
 # dados pro Stan para cada modelo
 
@@ -62,70 +62,175 @@ M0l <- model.matrix(f0, dat_l)
 M1l <- model.matrix(f1, dat_l)
 M2l <- model.matrix(f2, dat_l)
 
-dat_pred_b <- dat_b %>%
+# dados para y rep
+dat_pred_b0 <- dat_b %>%
   mutate(intercept = 1) %>%
   dplyr::select(intercept, nivel_identificacao_recode)
 
-dat_pred_l <- dat_l %>%
+dat_pred_b1 <- dat_b %>%
+  mutate(intercept = 1) %>%
+  dplyr::select(intercept, nivel_identificacao_recode, liberal_conservador)
+
+dat_pred_b2 <- dat_b %>%
+  mutate(intercept = 1) %>%
+  dplyr::select(intercept, nivel_identificacao_recode, liberal_conservador, score_narcisism)
+
+dat_pred_l0 <- dat_l %>%
   mutate(intercept = 1) %>%
   dplyr::select(intercept, nivel_identificacao_recode)
 
-#data for stan - Bolsonaro
-datlist0_b <- list(N=nrow(M0),                     #nr of obs
-                K=length(unique(dat_b[,51])),     #possible outcomes
-                D=ncol(M0),                     #dimension of predictor matrix
-                x=M0,                           #predictor matrix
-                y=as.numeric(dat_b[,51]),
-                N_new = nrow(dat_pred_b), # num obs prediction set
-                x_new = dat_pred_b)      # new pred matrix
+dat_pred_l1 <- dat_l %>%
+  mutate(intercept = 1) %>%
+  dplyr::select(intercept, nivel_identificacao_recode, liberal_conservador)
 
-#data for stan - Lula
-datlist0_l <- list(N=nrow(M1),                     #nr of obs
-                   K=length(unique(dat_l[,51])),     #possible outcomes
-                   D=ncol(M1),                     #dimension of predictor matrix
-                   x=M1,                           #predictor matrix
-                   y=as.numeric(dat_l[,51]),
-                   N_new = nrow(dat_pred_l), # num obs prediction set
-                   x_new = dat_pred_l)      # new pred matrix
+dat_pred_l2 <- dat_l %>%
+  mutate(intercept = 1) %>%
+  dplyr::select(intercept, nivel_identificacao_recode, liberal_conservador, score_narcisism, score_id_nac)
 
-#estimate model
-bayes_out0_b <- stan(file ="stan_model_pred.stan", 
-              data = datlist0_b,
-              iter = 2000,
-              chains = 4,
-              seed = 1259,
-              control = list(max_treedepth = 15))
+list_dat_pred <- list(dat_pred_b0, dat_pred_b1, dat_pred_b2)
+listab <- list(M0b, M1b, M2b)
+lista_fits_b <- list()
+lista_results_b <- list()
+lista_loo_b <- list()
+lista_psis_b <- list()
+lista_dados_ppc <- list()
 
-res0_b <- summary(bayes_out0_b, par=c("beta", "y_new"), probs=.5)$summary %>% as.data.frame
+# loop que cria dados e roda cada modelo no stan
+for (i in 1:3) {
+  # cria dados
+  datlist_b <- list(N=nrow(listab[[i]]),                     #nr of obs
+                    K=length(unique(dat_b[,51])),     #possible outcomes
+                    D=ncol(listab[[i]]),                     #dimension of predictor matrix
+                    x=listab[[i]],                           #predictor matrix
+                    y=as.numeric(dat_b[,51]),
+                    N_new = nrow(list_dat_pred[[i]]), # num obs prediction set
+                    x_new = list_dat_pred[[i]])      # new pred matrix
+  
+  lista_dados_ppc[[i]] <- datlist_b
+  # estima model
+  
+  fit_b <- stan(file ="stan_model_pred_v2.stan", 
+                       data = datlist_b,
+                       iter = 2000,
+                       chains = 4,
+                       seed = 1259,
+                       control = list(max_treedepth = 15))
+  
+  lista_fits_b[[i]] <- fit_b # armazena os resultados
+  lista_results_b[[i]] <- summary(lista_fits_b[[i]], par=c("beta", "y_new"), probs=.5)$summary %>% as.data.frame
+  
+  # loo
+  log_lik_b <- extract_log_lik(lista_fits_b[[i]], merge_chains = FALSE)
+  r_eff_b <- relative_eff(exp(log_lik_b)) 
+  loo_1_b <- loo(log_lik_b, r_eff = r_eff_b, save_psis = TRUE)
+  psis_b <- loo_1_b$psis_objec
+  lista_loo_b[[i]] <- loo_1_b
+  lista_psis_b[[i]] <- psis_b
+ 
+  print(i)
+}
+rm(fit_b) # remove modelo, já que tá tudo na lista
 
-log_lik_1_b <- extract_log_lik(bayes_out0_b, merge_chains = FALSE)
-r_eff_b <- relative_eff(exp(log_lik_1_b)) 
-loo_1_b <- loo(log_lik_1_b, r_eff = r_eff_b)
-print(loo_1_b)
 
+## Lula
+list_dat_pred <- list(dat_pred_l0, dat_pred_l1, dat_pred_l2)
+listal <- list(M0l, M1l, M2l)
+lista_fits_l <- list()
+lista_results_l <- list()
+lista_loo_l <- list()
+lista_psis_l <- list()
+lista_dados_ppc_l <- list()
+# loop que cria dados e roda cada modelo no stan pro Bolsonaro
+for (i in 1:3) {
+  # cria dados
+  datlist_l <- list(N=nrow(listal[[i]]),                     #nr of obs
+                    K=length(unique(dat_b[,51])),     #possible outcomes
+                    D=ncol(listal[[i]]),                     #dimension of predictor matrix
+                    x=listal[[i]],                           #predictor matrix
+                    y=as.numeric(dat_b[,51]),
+                    N_new = nrow(dat_pred_b), # num obs prediction set
+                    x_new = dat_pred_b)      # new pred matrix
+  
+  lista_dados_ppc_l[[i]] <- datlist_b
+  # estima model
+  
+  fit_l <- stan(file ="stan_model_pred_v2.stan", 
+                data = datlist_l,
+                iter = 2000,
+                chains = 4,
+                seed = 1259,
+                control = list(max_treedepth = 15))
+  
+  lista_fits_l[[i]] <- fit_l # armazena os resultados
+  lista_results_l[[i]] <- summary(lista_fits_l[[i]], par=c("beta", "y_new"), probs=.5)$summary %>% as.data.frame
+  
+  # loo
+  log_lik_l <- extract_log_lik(lista_fits_l[[i]], merge_chains = FALSE)
+  r_eff_l <- relative_eff(exp(log_lik_l)) 
+  loo_1_l <- loo(log_lik_l, r_eff = r_eff_l, save_psis = TRUE)
+  psis_l <- loo_1_l$psis_objec
+  lista_loo_l[[i]] <- loo_1_l
+  lista_psis_l[[i]] <- psis_l
+  
+  print(i)
+}
 
-#estimate model
-bayes_out0_l <- stan(file ="stan_model_pred.stan", 
-                     data = datlist0_l,
-                     iter = 2000,
-                     chains = 4,
-                     seed = 1259,
-                     control = list(max_treedepth = 15))
+rm(fit_l) # remove modelo, já que tá tudo na lista
 
-res0_l <- summary(bayes_out0_l, par=c("beta", "y_new"), probs=.5)$summary %>% as.data.frame
-
-head(res0_b, 10)
-head(res0_l, 10)
-
-summary(res0_l[7:nrow(res0_l),4])
-summary(res0_b[7:nrow(res0_b),4])
 
 ## PPC
 
-y_rep_b <- as.matrix(bayes_out0_b, pars = "y_new")
-ppc_dens_overlay(datlist0_b$y, y_rep_b[1:nrow(res0_b), ])
-ppc_bars(datlist0_l$y, y_rep_l[1:nrow(res0_l), ], prob = .95, freq = F)
-ppc_hist(datlist0_b$y, y_rep_b[1:20, ])
+# bolsonaro
+# modelo 1
+y_rep_b1 <- as.matrix(lista_fits_b[[1]], pars = "y_new")
+ppc_dens_overlay(lista_dados_ppc[[1]]$y, y_rep_b1[1:nrow(lista_results_b[[1]]), ])
+ppc_bars(lista_dados_ppc[[1]]$y, y_rep_b1[1:nrow(lista_results_b[[1]]), ], prob = .95, freq = F)
+ppc_hist(lista_dados_ppc[[1]]$y, y_rep_b1[1:20, ])
+
+# modelo 2
+y_rep_b2 <- as.matrix(lista_fits_b[[2]], pars = "y_new")
+ppc_dens_overlay(lista_dados_ppc[[2]]$y, y_rep_b2[1:nrow(lista_results_b[[2]]), ])
+ppc_bars(lista_dados_ppc[[2]]$y, y_rep_b2[1:nrow(lista_results_b[[2]]), ], prob = .95, freq = F)
+ppc_hist(lista_dados_ppc[[2]]$y, y_rep_b2[1:20, ])
+
+# modelo 3
+y_rep_b3 <- as.matrix(lista_fits_b[[3]], pars = "y_new")
+ppc_dens_overlay(lista_dados_ppc[[3]]$y, y_rep_b3[1:nrow(lista_results_b[[3]]), ])
+ppc_bars(lista_dados_ppc[[3]]$y, y_rep_b3[1:nrow(lista_results_b[[3]]), ], prob = .95, freq = F)
+ppc_hist(lista_dados_ppc[[3]]$y, y_rep_b3[1:20, ])
+
+
+# loo
+
+print(lista_loo_b[[1]])
+print(lista_loo_b[[2]])
+print(lista_loo_b[[3]])
+
+comp <- loo_compare(lista_loo_b[[1]], lista_loo_b[[2]], lista_loo_b[[3]])
+print(comp)
+
+
+# Lula
+# modelo 1
+y_rep_11 <- as.matrix(lista_fits_l[[1]], pars = "y_new")
+ppc_dens_overlay(lista_dados_ppc_l[[1]]$y, y_rep_11[1:nrow(lista_results_l[[1]]), ])
+ppc_bars(lista_dados_ppc_l[[1]]$y, y_rep_11[1:nrow(lista_results_b[[1]]), ], prob = .95, freq = F)
+ppc_hist(lista_dados_ppc_l[[1]]$y, y_rep_11[1:20, ])
+
+# modelo 2
+y_rep_l2 <- as.matrix(lista_fits_l[[2]], pars = "y_new")
+ppc_dens_overlay(lista_dados_ppc_l[[2]]$y, y_rep_l2[1:nrow(lista_results_l[[2]]), ])
+ppc_bars(lista_dados_ppc_l[[2]]$y, y_rep_l2[1:nrow(lista_results_l[[2]]), ], prob = .95, freq = F)
+ppc_hist(lista_dados_ppc_l[[2]]$y, y_rep_l2[1:20, ])
+
+# modelo 3
+y_rep_l3 <- as.matrix(lista_fits_l[[3]], pars = "y_new")
+ppc_dens_overlay(lista_dados_ppc_l[[3]]$y, y_rep_l3[1:nrow(lista_results_l[[3]]), ])
+ppc_bars(lista_dados_ppc_l[[3]]$y, y_rep_l3[1:nrow(lista_results_l[[3]]), ], prob = .95, freq = F)
+ppc_hist(lista_dados_ppc_l[[3]]$y, y_rep_l3[1:20, ])
+
+
+
 
 y_rep_l <- as.matrix(bayes_out0_l, pars = "y_new")
 ppc_dens_overlay(datlist0_l$y, y_rep_l[1:nrow(res0_l), ])
