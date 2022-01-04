@@ -5,6 +5,7 @@ library(tidyverse)
 library(bayesplot)
 library(loo)
 library(rstanarm)
+library(posterior)
 # For execution on a local, multicore CPU with excess RAM
 options(mc.cores = parallel::detectCores())
 
@@ -47,8 +48,8 @@ dat_l <- as.data.frame(compartilhamento1_l)
 #modelos a serem estimados
 
 f0 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode")
-f1 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + liberal_conservador")
-f2 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + liberal_conservador + score_narcisism")
+f1 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + genero")
+f2 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + liberal_conservador + score_narcisism + ladder + genero")
 
 # dados pro Stan para cada modelo
 
@@ -73,7 +74,7 @@ dat_pred_b1 <- dat_b %>%
 
 dat_pred_b2 <- dat_b %>%
   mutate(intercept = 1) %>%
-  dplyr::select(intercept, nivel_identificacao_recode, liberal_conservador, score_narcisism)
+  dplyr::select(intercept, nivel_identificacao_recode, liberal_conservador, score_narcisism, ladder, genero)
 
 dat_pred_l0 <- dat_l %>%
   mutate(intercept = 1) %>%
@@ -181,6 +182,12 @@ rm(fit_l) # remove modelo, já que tá tudo na lista
 ## PPC
 
 # bolsonaro
+array_of_draws <- as.array(lista_fits_b[[1]], pars = "beta")
+
+summarise_draws(array_of_draws)
+
+array_of_draws <- as.array(lista_fits_b[[3]], pars = "beta")
+summarise_draws(array_of_draws)
 # modelo 1
 y_rep_b1 <- as.matrix(lista_fits_b[[1]], pars = "y_new")
 ppc_dens_overlay(lista_dados_ppc[[1]]$y, y_rep_b1[1:nrow(lista_results_b[[1]]), ])
@@ -209,6 +216,15 @@ print(lista_loo_b[[3]])
 comp <- loo_compare(lista_loo_b[[1]], lista_loo_b[[2]], lista_loo_b[[3]])
 print(comp)
 
+## nvestigando ppc ruim
+
+compartilhamento1_b %>%
+  group_by(genero, decisao_compartilhamento) %>%
+  summarise(amostra_total = n(), .groups="drop") 
+
+compartilhamento1_b %>%
+  group_by(decisao_compartilhamento) %>%
+  summarise(amostra_total = n(), media_ladder = mean(ladder)) 
 
 # Lula
 # modelo 1
@@ -229,7 +245,7 @@ ppc_dens_overlay(lista_dados_ppc_l[[3]]$y, y_rep_l3[1:nrow(lista_results_l[[3]])
 ppc_bars(lista_dados_ppc_l[[3]]$y, y_rep_l3[1:nrow(lista_results_l[[3]]), ], prob = .95, freq = F)
 ppc_hist(lista_dados_ppc_l[[3]]$y, y_rep_l3[1:20, ])
 
-
+lista_results_b[[1]][1:5,]
 
 
 y_rep_l <- as.matrix(bayes_out0_l, pars = "y_new")
