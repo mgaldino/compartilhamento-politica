@@ -23,7 +23,7 @@ compartilhamento_3_estudos <- readRDS("Transformados/compartilhamento_3_estudos.
 
 # Calcular scores de narcisismo e identidade nacional
 compartilhamento_3_estudos <- compartilhamento_3_estudos %>%
-  mutate(score_narcissism = select(., 24:26) %>% apply(1, sum, na.rm=TRUE))
+  mutate(score_narcisism = select(., 24:26) %>% apply(1, sum, na.rm=TRUE))
 compartilhamento_3_estudos <- compartilhamento_3_estudos %>%
   mutate(score_id_nac = select(., 27:28) %>% apply(1, sum, na.rm=TRUE))
 
@@ -40,31 +40,27 @@ compartilhamento1_b <- compartilhamento1 %>%
 compartilhamento1_l <- compartilhamento1 %>%
   filter(politico_escolhido == "Lula")
 
-
-f0 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode")
-out0_b <- multinom(f0, data=compartilhamento1_b)
-
-summary(out0_b)
-multi_p_value(out0_b)
-
-out0_l <- multinom(f1, data=compartilhamento1_l)
-
-summary(out0_l)
-multi_p_value(out0_l)
-
-#Store output to compare later on:
-# out.multinom <- tidyr::gather(as.data.frame(coef(out0)), values) %>%  
-#   mutate(option=rep(row.names(coef(out0)), 2)) %>%
-#   mutate(coef= paste0(option, ":", values))%>%
-#   dplyr::select(-option, -values)%>%
-#   rename(multinom = value)
-
-
+# transformado os bancos de tiblle para df
 dat_b <- as.data.frame(compartilhamento1_b)
 dat_l <- as.data.frame(compartilhamento1_l)
-M0 <- model.matrix(f0, dat_b)
-M1 <- model.matrix(f0, dat_l)
 
+#modelos a serem estimados
+
+f0 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode")
+f1 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + liberal_conservador")
+f2 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + liberal_conservador + score_narcisism + score_id_nac")
+
+# dados pro Stan para cada modelo
+
+# base Bolsonaro
+M0b <- model.matrix(f0, dat_b)
+M1b <- model.matrix(f1, dat_b)
+M2b <- model.matrix(f2, dat_b)
+
+# base Lula
+M0l <- model.matrix(f0, dat_l)
+M1l <- model.matrix(f1, dat_l)
+M2l <- model.matrix(f2, dat_l)
 
 dat_pred_b <- dat_b %>%
   mutate(intercept = 1) %>%
@@ -138,7 +134,7 @@ ppc_hist(datlist0_l$y, y_rep_l[1:20, ])
 
 ## to use loo
 
-f1 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + liberal_conservador")
+
 out1_b <- multinom(f1, data=compartilhamento1_b)
 out1_l <- multinom(f1, data=compartilhamento1_l)
 
@@ -241,3 +237,16 @@ comp <- loo_compare(loo_1_b, loo_1_l)
 # https://personalpages.manchester.ac.uk/staff/david.selby/rthritis/2021-03-26-stan/Bayesian-modelling-with-Stan.html#15
 # https://study.sagepub.com/sites/default/files/chapter16.pdf
 # hierarchical https://rpubs.com/TCEagle/672172 e https://www.occasionaldivergences.com/post/choice-models/
+
+
+# comparando com frequentista, sanity check
+
+out0_b <- multinom(f0, data=compartilhamento1_b)
+
+summary(out0_b)
+multi_p_value(out0_b)
+
+out0_l <- multinom(f1, data=compartilhamento1_l)
+
+summary(out0_l)
+multi_p_value(out0_l)
