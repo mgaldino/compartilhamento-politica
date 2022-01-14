@@ -1,0 +1,313 @@
+---
+title: "Análise de regressão"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+Análise de dados do paper sobre compartilhamento de notícias e política.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T)
+```
+
+# Modelando com regressão multinomial
+
+## Motivando o uso da multinomial
+Se eu tenho três categorias (opção 1, opção 2, não publicar, como em nosso experimento), e cada participante tem as probabilidade de escolher cada cateogria (digamos, (10%, 50%, 40%) para um indivíduo, (15%, 35%, 50%) para outro etc.), então posso modelar minha variável resposta como uma multinomial(teta), em que teta é justamente (um vetor de)  probabilidades de cada indivíduo. E eu estou interessado em saber se, por exemplo, quem escolhe Bolsonaro tem (um vetor de) probabilidades diferentes em relação a quem escolhe Lula, em média.
+A regresão multinomial, portanto, procura identificar quais variáveis são preditoras de probabilidades diferentes entre indivíduos.
+
+
+```{r, results='hide', message=F}
+# loading libraries
+library(here, quietly=T)
+library(dplyr, quietly=T)
+library(tidyr, quietly=T)
+library(ggplot2, quietly=T)
+library(MNP, quietly=T)
+library(nnet, quietly=T)
+library(janitor, quietly = T)
+library(arm, quietly=T)
+
+```
+
+Vamos importar os dados já processados:
+
+```{r, message = FALSE, include = T}
+here()
+
+# importando dados processados
+compartilhamento_3_estudos <- readRDS("Transformados/compartilhamento_3_estudos.rds") %>%
+  mutate(atitude_lula_bolsonaro_recode_abs = abs(atitude_lula_bolsonaro_recode),
+         politico_recode = if_else(politico == "Bolsonaro", -1, 1))
+
+glimpse(compartilhamento_3_estudos)
+tail(compartilhamento_3_estudos)
+```
+
+Primeiros, vamos processar os dados e criar funções que serão úteis para a gente.
+
+```{r, message = FALSE, include = T}
+# estudo 1
+compartilhamento1 <- compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento)) %>%
+  filter(estudo == "estudo 1",
+         genero != "outros") %>% #exclui outros, pois tem muito poucos casos
+  droplevels() %>%
+  mutate(atitude_lula_bolsonaro_recode =
+           if_else(politico == "Bolsonaro", atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode))  %>% 
+  filter(atitude_lula_bolsonaro_recode != 0)
+
+# estudo 2
+compartilhamento2 <- compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento)) %>%
+  filter(estudo == "estudo 2",
+         genero != "outros") %>% #exclui outros, pois tem muito poucos casos
+  droplevels() %>%
+  mutate(atitude_lula_bolsonaro_recode =
+           if_else(politico == "Bolsonaro", atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode))  %>% 
+  filter(atitude_lula_bolsonaro_recode != 0)
+
+
+# estudo 3
+compartilhamento3 <- compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento)) %>%
+  filter(estudo == "estudo 3",
+         genero != "outros") %>% #exclui outros, pois tem muito poucos casos
+  droplevels() %>%
+  mutate(atitude_lula_bolsonaro_recode = 
+           if_else(politico == "Bolsonaro", atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode))  %>% 
+  filter(atitude_lula_bolsonaro_recode != 0)
+
+# function to compute p-values based on z-scores (2-tailed z test)
+
+multi_p_value <- function(fit_object) {
+  z <- summary(fit_object)$coefficients/summary(fit_object)$standard.errors
+  p <- (1 - pnorm(abs(z), 0, 1)) * 2
+  p
+}
+```
+
+# Análise de Regressão
+
+Primeiro vamos rodar todas as análises para o estudo 1. Em seguida, as mesmas análises para o estudo 2 e 3.
+
+O modelo utilizado foi uma regressão multinomial, já que nossa variável resposta possui três categorias não ordenadas (publicar opção 1, publicar opção 2 ou não publicar nada) e o modelo multinomial é adequado para esse tipo de variável.
+
+A categoria de referência escolhida em todos os modelos foi publicar a opção 1, pois a hipótese de interesse é veriicar se há diferenças entre Bolsonaristas e Lulistas na escolha pela opção 1 ou 2.
+
+# Estudo 1
+```{r, message = FALSE, include = T}
+fit0 <- multinom(decisao_compartilhamento ~ atitude_lula_bolsonaro_recode,
+                 data = compartilhamento1)
+summary(fit0)
+multi_p_value(fit0)
+
+fit0a <- multinom(decisao_compartilhamento ~ atitude_lula_bolsonaro_recode_abs*politico,
+                 data = compartilhamento1)
+summary(fit0a)
+multi_p_value(fit0a)
+```
+O modelo de regressão mostrou que a variável político (se lulista ou bolsonarista) não é significativa (p = 0.06) quando consideramos escolha da opção 2 em relação à opção 1.
+
+Como nós vimos que gênero pode ser uma variável relevante na análise descritiva, vamos incluir esta variável na análise (?).
+
+```{r, message = FALSE, include = T}
+fit1 <- multinom(decisao_compartilhamento ~ atitude_lula_bolsonaro_recode*genero,
+                 data = compartilhamento1)
+
+summary(fit1)
+multi_p_value(fit1)
+```
+Como é possível ver, o ajuste do modelo, medido pelo AIC, é só um pouco melhor (313 versus 315), e gênero é signficativo (mulher escolhe mais opção 2 e nenhum notícia, versus opcão 1) e também o termo de interação (lulistas homens compartilham mais a opção 2 em relação à opção 1).
+
+Vamos agora incluir idade no modelo, que, como vimos, é uma variável importante.
+
+```{r, message = FALSE, include = T}
+fit2 <- multinom(decisao_compartilhamento ~ politico*genero + idade,
+                 data = compartilhamento1)
+
+summary(fit2)
+multi_p_value(fit2)
+```
+
+Para entender os coeficientes, vamos usar a função predict.
+```{r, message = FALSE, include = T}
+
+# cria um banco com cada perfil de político e gênero, sempre com idade média
+compartilhamento1_predict <- compartilhamento1 %>%
+  mutate(idade = mean(idade)) %>%
+  dplyr::filter(e_mail %in% c("Thais.martinezgarcia@gmail.com", "miltonmorelli@globo.com", 
+                              "delma.i.nakao@globo.com" , "Rick.bertozzi@gmail.com")) %>%
+  dplyr::select( idade, genero, politico)
+
+# vê os perfis criados
+glimpse(compartilhamento1_predict)
+my_predict <- predict(fit2, newdata = compartilhamento1_predict, type = "probs", se.fit = T)
+
+# vê as previsões
+print(my_predict)
+
+```
+
+A função predict mostra as probabilidades de cada categoria, para cada combinação de perfil.
+
+```{r, message = FALSE, include = T}
+fit3 <- multinom(decisao_compartilhamento ~ politico*genero + idade + score_id_nac + score_narcissism,
+                 data = compartilhamento1)
+
+summary(fit3)
+multi_p_value(fit3)
+```
+Vamos, por fim, incluir as variáveis narcisimo e nacionalismo.
+
+
+O AIC é similar ao do modelo 1, indicando que não há ganho preditivo (in sample). Vemos que idade não é significativo, indicando que o modelo entendeu que o político é mais relevante que idade.
+Preciso ainda rodar para o estudo 2 e 3.
+
+Rodando agora o modelo apenas com os scores
+```{r, message = FALSE, include = T}
+fit4 <- multinom(decisao_compartilhamento ~  score_id_nac + score_narcissism,
+                 data = compartilhamento1)
+
+summary(fit4)
+multi_p_value(fit4)
+```
+Como a amostra de cada estudo é pequena, vale a pena considerar também um modelo hierárquico que junte os três estudos, de modo a ampliar a amostra e estabilizar as estimativas. Esse será o próximo passo.
+
+# regressões para o estudo 2
+
+```{r, message = FALSE, include = T}
+fit0_2 <- multinom(decisao_compartilhamento ~ politico,
+                 data = compartilhamento2)
+summary(fit0_2)
+multi_p_value(fit0_2)
+```
+O modelo de regressão mostrou que a variável político (se lulista ou bolsonarista) não é significativo.
+
+Como nós vimos que gênero pode ser uma variável relevante, vamos incluir esta variável na análise.
+
+```{r, message = FALSE, include = T}
+fit1_2 <- multinom(decisao_compartilhamento ~ politico*genero,
+                 data = compartilhamento2)
+
+summary(fit1_2)
+multi_p_value(fit1_2)
+```
+Como é possível ver, o ajuste do modelo, medido pelo AIC, é um pouco pior e nenhuma variável é significativa.
+
+Vamos agora incluir idade no modelo, que, como vimos, é uma variável importante.
+
+```{r, message = FALSE, include = T}
+fit2_2 <- multinom(decisao_compartilhamento ~ politico*genero + idade,
+                 data = compartilhamento2)
+
+summary(fit2_2)
+multi_p_value(fit2_2)
+```
+Novamente, nada significativo.
+
+```{r, message = FALSE, include = T}
+fit3_2 <- multinom(decisao_compartilhamento ~ politico*genero + idade + score_id_nac + score_narcissism,
+                 data = compartilhamento2)
+
+summary(fit3_2)
+multi_p_value(fit3_2)
+```
+
+
+Rodando agora o modelo apenas com os scores
+```{r, message = FALSE, include = T}
+fit4_2 <- multinom(decisao_compartilhamento ~  score_id_nac + score_narcissism,
+                 data = compartilhamento2)
+
+summary(fit4_2)
+multi_p_value(fit4_2)
+```
+# Estudo 3
+```{r, message = FALSE, include = T}
+fit0_3 <- multinom(decisao_compartilhamento ~ politico,
+                 data = compartilhamento3)
+summary(fit0_3)
+multi_p_value(fit0_3)
+```
+O modelo de regressão mostrou que a variável político (se lulista ou bolsonarista) não é significativo.
+
+Como nós vimos que gênero pode ser uma variável relevante, vamos incluir esta variável na análise.
+
+```{r, message = FALSE, include = T}
+fit1_3 <- multinom(decisao_compartilhamento ~ politico*genero,
+                 data = compartilhamento3)
+
+summary(fit1_3)
+multi_p_value(fit1_3)
+```
+Como é possível ver, o ajuste do modelo, medido pelo AIC, é só um pouco melhor (313 versus 315), e gênero é signficativo (mulher escolhe mais opção 2 e nenhum notícia, versus opcão 1) e também o term ode interação (lulistas mulheres compartilham mais a opção 2 ou não publicam nenhuma notícia em relação à opção 1).
+
+Vamos agora incluir idade no modelo, que, como vimos, é uma variável importante.
+
+```{r, message = FALSE, include = T}
+fit2_3 <- multinom(decisao_compartilhamento ~ politico*genero + idade,
+                 data = compartilhamento3)
+
+summary(fit2_3)
+multi_p_value(fit2_3)
+```
+```{r, message = FALSE, include = T}
+
+fit3_3 <- multinom(decisao_compartilhamento ~ politico*genero + idade + score_id_nac + score_narcissism,
+                 data = compartilhamento3)
+
+summary(fit3_3)
+multi_p_value(fit3_3)
+```
+Vamos, por fim, incluir as variáveis narcisimo e nacionalismo.
+
+
+O AIC é similar ao do modelo 1, indicando que não há ganho preditivo (in sample). Vemos que idade não é significativo, indicando que o modelo entendeu que o político é mais relevante que idade.
+Preciso ainda rodar para o estudo 2 e 3.
+
+Rodando agora o modelo apenas com os scores
+```{r, message = FALSE, include = T}
+fit4_3 <- multinom(decisao_compartilhamento ~  score_id_nac + score_narcissism,
+                 data = compartilhamento3)
+
+summary(fit4_3)
+multi_p_value(fit4_3)
+```
+
+# Agora, vamos juntar tudo em uma regressão só
+
+```{r, message = FALSE, include = T}
+# criando banco
+compartilhamento_all <- compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento)) %>%
+  filter(genero != "outros") %>% #exclui outros, pois tem muito poucos casos
+  droplevels() %>%
+  mutate(atitude_lula_bolsonaro_recode = if_else(politico == "Bolsonaro", atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode))
+
+```
+
+## rodando as regressões todas juntas
+
+
+
+```{r, message = FALSE, include = T}
+fit4_1 <- multinom(decisao_compartilhamento ~  politico*estudo,
+                 data = compartilhamento_all)
+
+summary(fit4_1)
+multi_p_value(fit4_1)
+
+```
+
+Agora com gênero
+```{r, message = FALSE, include = T}
+fit4_2 <- multinom(decisao_compartilhamento ~  politico*estudo + politico*genero,
+                 data = compartilhamento_all)
+
+summary(fit4_2)
+multi_p_value(fit4_2)
+
+```
