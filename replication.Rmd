@@ -1,0 +1,90 @@
+---
+title: "Replication estudo 2"
+output:
+  html_document:
+    df_print: paged
+---
+
+
+Análise de dados do paper sobre compartilhamento de notícias e política.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T)
+```
+
+
+```{r, results='hide', message=F}
+# loading libraries
+library(here, quietly=T)
+library(dplyr, quietly=T)
+library(tidyr, quietly=T)
+library(ggplot2, quietly=T)
+library(MNP, quietly=T)
+library(nnet, quietly=T)
+library(janitor, quietly = T)
+library(arm, quietly=T)
+
+here()
+```
+
+Vamos importar os dados já processados:
+
+```{r, message = FALSE, include = T}
+
+
+# importando dados processados
+compartilhamento_3_estudos <- readRDS("Transformados/compartilhamento_3_estudos.rds")
+
+```
+
+Primeiros, vamos processar os dados.
+
+```{r, message = FALSE, include = T}
+# estudo 1
+compartilhamento1 <- compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento)) %>%
+  filter(estudo == "estudo 1") %>%
+  droplevels() %>%
+  mutate(atitude_lula_bolsonaro_recode = 
+           if_else(politico == "Bolsonaro", atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode)) %>% 
+  filter(atitude_lula_bolsonaro_recode != 0)
+
+# estudo 2
+compartilhamento2 <- compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento)) %>%
+  filter(estudo == "estudo 2") %>%
+  droplevels() %>%
+  mutate(atitude_lula_bolsonaro_recode = 
+           if_else(politico == "Bolsonaro", atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode)) %>% 
+  filter(atitude_lula_bolsonaro_recode != 0)
+
+
+# estudo 3
+compartilhamento3 <- compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento)) %>%
+  filter(estudo == "estudo 3") %>%
+  droplevels() %>%
+  mutate(atitude_lula_bolsonaro_recode = 
+           if_else(politico == "Bolsonaro", atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode)) %>% 
+  filter(atitude_lula_bolsonaro_recode != 0)
+
+
+```
+
+# Replicando o TCC
+```{r, message = FALSE, include = T}
+
+# estudo 1
+table( compartilhamento1$politico, compartilhamento1$decisao_compartilhamento)
+summary(table( compartilhamento1$politico, compartilhamento1$decisao_compartilhamento))
+
+# estudo 2
+table( compartilhamento2$politico, compartilhamento2$decisao_compartilhamento)
+summary(table( compartilhamento2$politico, compartilhamento2$decisao_compartilhamento))
+
+# estudo 2
+table( compartilhamento3$politico, compartilhamento3$decisao_compartilhamento)
+summary(table( compartilhamento3$politico, compartilhamento3$decisao_compartilhamento))
+```
+
+Em nenhum dos estudos houve significância estatística, o que sugere não haver diferença relevante (distinguível de zero) entre bolsonaristas e lulistas.
