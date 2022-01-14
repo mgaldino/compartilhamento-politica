@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+
+
+<title>Análise de regressão</title>
+
+<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+<link href="site_libs/pagedtable-1.1/css/pagedtable.css" rel="stylesheet" />
+<script src="site_libs/pagedtable-1.1/js/pagedtable.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Compartilhamento Politica</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="analise.html">Analise exploratoria</a>
+</li>
+<li>
+  <a href="about.html">About Me</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Análise de regressão</h1>
+
+</div>
+
+
+<p>Análise de dados do paper sobre compartilhamento de notícias e política.</p>
+<div id="modelando-com-regressão-multinomial" class="section level1">
+<h1>Modelando com regressão multinomial</h1>
+<div id="motivando-o-uso-da-multinomial" class="section level2">
+<h2>Motivando o uso da multinomial</h2>
+<p>Se eu tenho três categorias (opção 1, opção 2, não publicar, como em nosso experimento), e cada participante tem as probabilidade de escolher cada cateogria (digamos, (10%, 50%, 40%) para um indivíduo, (15%, 35%, 50%) para outro etc.), então posso modelar minha variável resposta como uma multinomial(teta), em que teta é justamente (um vetor de) probabilidades de cada indivíduo. E eu estou interessado em saber se, por exemplo, quem escolhe Bolsonaro tem (um vetor de) probabilidades diferentes em relação a quem escolhe Lula, em média. A regresão multinomial, portanto, procura identificar quais variáveis são preditoras de probabilidades diferentes entre indivíduos.</p>
+<pre class="r"><code># loading libraries
+library(here, quietly=T)
+library(dplyr, quietly=T)
+library(tidyr, quietly=T)
+library(ggplot2, quietly=T)
+library(MNP, quietly=T)
+library(nnet, quietly=T)
+library(janitor, quietly = T)
+library(arm, quietly=T)</code></pre>
+<p>Vamos importar os dados já processados:</p>
+<pre class="r"><code>here()</code></pre>
+<pre><code>## [1] &quot;/home/mgaldino/Documentos/Pessoal/Neuroscience/compartilhamento-politica&quot;</code></pre>
+<pre class="r"><code># importando dados processados
+compartilhamento_3_estudos &lt;- readRDS(&quot;Transformados/compartilhamento_3_estudos.rds&quot;) %&gt;%
+  mutate(atitude_lula_bolsonaro_recode_abs = abs(atitude_lula_bolsonaro_recode),
+         politico_recode = if_else(politico == &quot;Bolsonaro&quot;, -1, 1))
+
+glimpse(compartilhamento_3_estudos)</code></pre>
+<pre><code>## Rows: 622
+## Columns: 59
+## $ link                                       &lt;dbl&gt; 1, 1, 1, 1, 1, 1, 1, 1, 1, …
+## $ date_created                               &lt;dttm&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ date_modified                              &lt;dttm&gt; NA, NA, NA, NA, NA, NA, NA…
+## $ ip_address                                 &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA,…
+## $ email_address                              &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA,…
+## $ first_name                                 &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA,…
+## $ last_name                                  &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA,…
+## $ custom_1                                   &lt;lgl&gt; NA, NA, NA, NA, NA, NA, NA,…
+## $ termo_de_consentimento                     &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA,…
+## $ idade                                      &lt;dbl&gt; 62, 20, 25, 28, 34, 25, 24,…
+## $ grau_de_escolaridade                       &lt;fct&gt; Superior Completo, Superio …
+## $ estado_civil                               &lt;fct&gt; casado, solteiro, solteiro,…
+## $ genero                                     &lt;fct&gt; homem, mulher, homem, homem…
+## $ genero_especifico                          &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA,…
+## $ psicotropicos                              &lt;fct&gt; Não, Não, Não, Não, Não, Nã…
+## $ doencas_psiquias                           &lt;fct&gt; Não, Não, Não, Não, Não, Nã…
+## $ uso_drogas                                 &lt;fct&gt; Não, Não, Não, Não, Não, Nã…
+## $ filiacao_partidaria                        &lt;fct&gt; não, não, não, não, não, nã…
+## $ partido_especifico                         &lt;chr&gt; NA, NA, NA, NA, NA, NA, NA,…
+## $ iniciais                                   &lt;chr&gt; &quot;JM62&quot;, &quot;FLCB20&quot;, &quot;GFSC25&quot;,…
+## $ ladder                                     &lt;dbl&gt; 6, 7, 6, 4, 7, 6, 6, 4, 6, …
+## $ liberal_conservador                        &lt;dbl&gt; 8, 3, 7, 10, 9, 9, 8, 7, 9,…
+## $ brasileiro_especial                        &lt;dbl&gt; 2, 5, 0, 1, 5, 3, 0, 1, 0, …
+## $ brasileiro_importancia                     &lt;dbl&gt; 5, 9, 7, 8, 10, 7, 6, 10, 7…
+## $ brasileiro_reconhecimento                  &lt;dbl&gt; 8, 8, 8, 8, 5, 6, 5, 5, 10,…
+## $ score_narcissism                           &lt;dbl&gt; 5.000000, 7.333333, 5.00000…
+## $ nacionalismo_identidade_brasileiro         &lt;dbl&gt; 10, 5, 10, 10, 10, 10, 10, …
+## $ nacionalismo_brasileiro_quem_sou           &lt;dbl&gt; 10, 10, 10, 10, 10, 8, 8, 1…
+## $ score_id_nac                               &lt;dbl&gt; 10.0, 7.5, 10.0, 10.0, 10.0…
+## $ cotas_raciais                              &lt;dbl&gt; 0, 34, 0, 0, 0, 0, 10, 65, …
+## $ sistema_de_cotas                           &lt;dbl&gt; 10, 49, 0, 90, 0, 35, 70, 6…
+## $ ajuda_imigrantes                           &lt;dbl&gt; 70, 73, 50, 82, 50, 81, 65,…
+## $ privatizacao_do_sus                        &lt;dbl&gt; 31, 50, 100, 0, 100, 50, 25…
+## $ privatizacao_dos_planos_de_saude           &lt;dbl&gt; 40, 73, 50, 73, 100, 51, 50…
+## $ fronteira_imigrantes                       &lt;dbl&gt; 80, 29, 40, 61, 75, 25, 35,…
+## $ pena_de_morte                              &lt;dbl&gt; 80, 69, 80, 100, 80, 20, 0,…
+## $ adocao_de_criancas_por_casais_homossexuais &lt;dbl&gt; 50, 100, 65, 0, 50, 21, 10,…
+## $ casamento_de_casais_homossexuais           &lt;dbl&gt; 50, 100, 30, 0, 25, 0, 0, 0…
+## $ cirurgia_de_redesignacao_de_sexo           &lt;dbl&gt; 25, 29, 30, 0, 0, 0, 0, 0, …
+## $ legalizacao_do_aborto                      &lt;dbl&gt; 20, 86, 40, 0, 25, 0, 15, 0…
+## $ educacao_sexual_nas_escolas                &lt;dbl&gt; 29, 100, 50, 62, 10, 25, 20…
+## $ direitos_trabalhistas                      &lt;dbl&gt; 50, 100, 100, 75, 50, 100, …
+## $ direitos_humanos                           &lt;dbl&gt; 70, 100, 100, 80, 20, 89, 1…
+## $ ampliacao_do_sus                           &lt;dbl&gt; 100, 100, 100, 100, 0, 74, …
+## $ transporte_publico                         &lt;dbl&gt; 41, 100, 100, 100, 50, 100,…
+## $ clubes_de_strip_tease                      &lt;dbl&gt; 0, 50, 30, 0, 0, 0, 0, 0, 5…
+## $ censura_a_pornografia_na_internet          &lt;dbl&gt; 100, 100, 30, 0, 100, 100, …
+## $ pornografia                                &lt;dbl&gt; 0, 0, 0, 0, 10, 0, 0, 0, 50…
+## $ prostituicao                               &lt;dbl&gt; 0, 0, 0, 0, 0, 0, 0, 0, 0, …
+## $ atitude_lula_bolsonaro                     &lt;chr&gt; &quot;80%&quot;, &quot;20%&quot;, &quot;80%&quot;, &quot;80%&quot;,…
+## $ politico                                   &lt;fct&gt; Bolsonaro, Bolsonaro, Bolso…
+## $ img_alinhamento                            &lt;fct&gt; Image 5, Image 2, Image 1, …
+## $ decisao_compartilhamento                   &lt;fct&gt; NA, (opção 1), (opção 2), (…
+## $ participacao_estudo                        &lt;fct&gt; NA, &quot;Sim&quot;, &quot;Sim&quot;, &quot;Sim&quot;, &quot;S…
+## $ e_mail                                     &lt;chr&gt; NA, NA, &quot;Gabrielfscosta@out…
+## $ atitude_lula_bolsonaro_recode              &lt;dbl&gt; 80, 20, 80, 80, 100, 80, 40…
+## $ estudo                                     &lt;fct&gt; estudo 2, estudo 2, estudo …
+## $ atitude_lula_bolsonaro_recode_abs          &lt;dbl&gt; 80, 20, 80, 80, 100, 80, 40…
+## $ politico_recode                            &lt;dbl&gt; -1, -1, -1, -1, -1, -1, -1,…</code></pre>
+<pre class="r"><code>tail(compartilhamento_3_estudos)</code></pre>
+<div data-pagedtable="false">
+<script data-pagedtable-source type="application/json">
+{"columns":[{"label":["link"],"name":[1],"type":["dbl"],"align":["right"]},{"label":["date_created"],"name":[2],"type":["dttm"],"align":["right"]},{"label":["date_modified"],"name":[3],"type":["dttm"],"align":["right"]},{"label":["ip_address"],"name":[4],"type":["chr"],"align":["left"]},{"label":["email_address"],"name":[5],"type":["lgl"],"align":["right"]},{"label":["first_name"],"name":[6],"type":["lgl"],"align":["right"]},{"label":["last_name"],"name":[7],"type":["lgl"],"align":["right"]},{"label":["custom_1"],"name":[8],"type":["lgl"],"align":["right"]},{"label":["termo_de_consentimento"],"name":[9],"type":["chr"],"align":["left"]},{"label":["idade"],"name":[10],"type":["dbl"],"align":["right"]},{"label":["grau_de_escolaridade"],"name":[11],"type":["fct"],"align":["left"]},{"label":["estado_civil"],"name":[12],"type":["fct"],"align":["left"]},{"label":["genero"],"name":[13],"type":["fct"],"align":["left"]},{"label":["genero_especifico"],"name":[14],"type":["chr"],"align":["left"]},{"label":["psicotropicos"],"name":[15],"type":["fct"],"align":["left"]},{"label":["doencas_psiquias"],"name":[16],"type":["fct"],"align":["left"]},{"label":["uso_drogas"],"name":[17],"type":["fct"],"align":["left"]},{"label":["filiacao_partidaria"],"name":[18],"type":["fct"],"align":["left"]},{"label":["partido_especifico"],"name":[19],"type":["chr"],"align":["left"]},{"label":["iniciais"],"name":[20],"type":["chr"],"align":["left"]},{"label":["ladder"],"name":[21],"type":["dbl"],"align":["right"]},{"label":["liberal_conservador"],"name":[22],"type":["dbl"],"align":["right"]},{"label":["brasileiro_especial"],"name":[23],"type":["dbl"],"align":["right"]},{"label":["brasileiro_importancia"],"name":[24],"type":["dbl"],"align":["right"]},{"label":["brasileiro_reconhecimento"],"name":[25],"type":["dbl"],"align":["right"]},{"label":["score_narcissism"],"name":[26],"type":["dbl"],"align":["right"]},{"label":["nacionalismo_identidade_brasileiro"],"name":[27],"type":["dbl"],"align":["right"]},{"label":["nacionalismo_brasileiro_quem_sou"],"name":[28],"type":["dbl"],"align":["right"]},{"label":["score_id_nac"],"name":[29],"type":["dbl"],"align":["right"]},{"label":["cotas_raciais"],"name":[30],"type":["dbl"],"align":["right"]},{"label":["sistema_de_cotas"],"name":[31],"type":["dbl"],"align":["right"]},{"label":["ajuda_imigrantes"],"name":[32],"type":["dbl"],"align":["right"]},{"label":["privatizacao_do_sus"],"name":[33],"type":["dbl"],"align":["right"]},{"label":["privatizacao_dos_planos_de_saude"],"name":[34],"type":["dbl"],"align":["right"]},{"label":["fronteira_imigrantes"],"name":[35],"type":["dbl"],"align":["right"]},{"label":["pena_de_morte"],"name":[36],"type":["dbl"],"align":["right"]},{"label":["adocao_de_criancas_por_casais_homossexuais"],"name":[37],"type":["dbl"],"align":["right"]},{"label":["casamento_de_casais_homossexuais"],"name":[38],"type":["dbl"],"align":["right"]},{"label":["cirurgia_de_redesignacao_de_sexo"],"name":[39],"type":["dbl"],"align":["right"]},{"label":["legalizacao_do_aborto"],"name":[40],"type":["dbl"],"align":["right"]},{"label":["educacao_sexual_nas_escolas"],"name":[41],"type":["dbl"],"align":["right"]},{"label":["direitos_trabalhistas"],"name":[42],"type":["dbl"],"align":["right"]},{"label":["direitos_humanos"],"name":[43],"type":["dbl"],"align":["right"]},{"label":["ampliacao_do_sus"],"name":[44],"type":["dbl"],"align":["right"]},{"label":["transporte_publico"],"name":[45],"type":["dbl"],"align":["right"]},{"label":["clubes_de_strip_tease"],"name":[46],"type":["dbl"],"align":["right"]},{"label":["censura_a_pornografia_na_internet"],"name":[47],"type":["dbl"],"align":["right"]},{"label":["pornografia"],"name":[48],"type":["dbl"],"align":["right"]},{"label":["prostituicao"],"name":[49],"type":["dbl"],"align":["right"]},{"label":["atitude_lula_bolsonaro"],"name":[50],"type":["chr"],"align":["left"]},{"label":["politico"],"name":[51],"type":["fct"],"align":["left"]},{"label":["img_alinhamento"],"name":[52],"type":["fct"],"align":["left"]},{"label":["decisao_compartilhamento"],"name":[53],"type":["fct"],"align":["left"]},{"label":["participacao_estudo"],"name":[54],"type":["fct"],"align":["left"]},{"label":["e_mail"],"name":[55],"type":["chr"],"align":["left"]},{"label":["atitude_lula_bolsonaro_recode"],"name":[56],"type":["dbl"],"align":["right"]},{"label":["estudo"],"name":[57],"type":["fct"],"align":["left"]},{"label":["atitude_lula_bolsonaro_recode_abs"],"name":[58],"type":["dbl"],"align":["right"]},{"label":["politico_recode"],"name":[59],"type":["dbl"],"align":["right"]}],"data":[{"1":"3","2":"2020-09-19 08:27:17","3":"2020-09-19 08:33:40","4":"187.26.148.227","5":"NA","6":"NA","7":"NA","8":"NA","9":"Declaro que li e entendi os objetivos deste estudo. Estou ciente de que a participação é voluntária, e que, a qualquer momento tenho o direito de obter outros esclarecimentos sobre a pesquisa e de retirar a permissão para participar da mesma, sem qualquer penalidade ou prejuízo","10":"45","11":"Superior Completo","12":"casado","13":"homem","14":"NA","15":"Não","16":"Não","17":"Não","18":"não","19":"NA","20":"Gsc45","21":"5","22":"1","23":"5","24":"5","25":"7","26":"5.666667","27":"10","28":"10","29":"10.0","30":"80","31":"80","32":"80","33":"80","34":"0","35":"0","36":"25","37":"100","38":"100","39":"100","40":"100","41":"100","42":"75","43":"100","44":"100","45":"100","46":"100","47":"25","48":"75","49":"100","50":"0 Não sou nada favorável a nenhuma ideia","51":"neutro","52":"NA","53":"NA","54":"NA","55":"NA","56":"0","57":"estudo 3","58":"0","59":"1"},{"1":"3","2":"2020-09-18 10:43:28","3":"2020-09-18 10:54:08","4":"189.34.224.32","5":"NA","6":"NA","7":"NA","8":"NA","9":"Declaro que li e entendi os objetivos deste estudo. Estou ciente de que a participação é voluntária, e que, a qualquer momento tenho o direito de obter outros esclarecimentos sobre a pesquisa e de retirar a permissão para participar da mesma, sem qualquer penalidade ou prejuízo","10":"35","11":"Superior Completo","12":"casado","13":"homem","14":"NA","15":"Não","16":"Não","17":"Não","18":"não","19":"NA","20":"LFM35","21":"7","22":"3","23":"1","24":"1","25":"1","26":"1.000000","27":"5","28":"5","29":"5.0","30":"49","31":"51","32":"50","33":"0","34":"50","35":"50","36":"100","37":"50","38":"100","39":"100","40":"52","41":"100","42":"51","43":"51","44":"100","45":"100","46":"50","47":"50","48":"49","49":"100","50":"0 Não sou nada favorável a nenhuma ideia","51":"neutro","52":"NA","53":"NA","54":"NA","55":"NA","56":"0","57":"estudo 3","58":"0","59":"1"},{"1":"3","2":"2020-08-21 04:53:48","3":"2020-08-21 05:00:20","4":"187.84.182.42","5":"NA","6":"NA","7":"NA","8":"NA","9":"Declaro que li e entendi os objetivos deste estudo. Estou ciente de que a participação é voluntária, e que, a qualquer momento tenho o direito de obter outros esclarecimentos sobre a pesquisa e de retirar a permissão para participar da mesma, sem qualquer penalidade ou prejuízo","10":"32","11":"Superior Completo","12":"casado","13":"homem","14":"NA","15":"Não","16":"Não","17":"Não","18":"não","19":"NA","20":"ISCJR","21":"6","22":"0","23":"0","24":"5","25":"0","26":"1.666667","27":"0","28":"0","29":"0.0","30":"0","31":"5","32":"0","33":"100","34":"100","35":"0","36":"100","37":"47","38":"0","39":"50","40":"0","41":"100","42":"0","43":"0","44":"0","45":"0","46":"100","47":"0","48":"50","49":"100","50":"0 Não sou nada favorável a nenhuma ideia","51":"neutro","52":"NA","53":"NA","54":"NA","55":"NA","56":"0","57":"estudo 3","58":"0","59":"1"},{"1":"3","2":"2020-08-19 15:50:35","3":"2020-08-19 15:56:42","4":"179.145.63.92","5":"NA","6":"NA","7":"NA","8":"NA","9":"Declaro que li e entendi os objetivos deste estudo. Estou ciente de que a participação é voluntária, e que, a qualquer momento tenho o direito de obter outros esclarecimentos sobre a pesquisa e de retirar a permissão para participar da mesma, sem qualquer penalidade ou prejuízo","10":"34","11":"Superior Completo","12":"casado","13":"homem","14":"NA","15":"Não","16":"Sim","17":"Não","18":"não","19":"NA","20":"RFB34","21":"9","22":"1","23":"1","24":"8","25":"8","26":"5.666667","27":"10","28":"10","29":"10.0","30":"67","31":"67","32":"100","33":"100","34":"100","35":"0","36":"0","37":"100","38":"100","39":"100","40":"100","41":"100","42":"100","43":"100","44":"100","45":"100","46":"100","47":"0","48":"100","49":"100","50":"0 Não sou nada favorável a nenhuma ideia","51":"neutro","52":"NA","53":"NA","54":"NA","55":"NA","56":"0","57":"estudo 3","58":"0","59":"1"},{"1":"3","2":"2020-08-19 15:28:16","3":"2020-08-19 15:32:28","4":"201.55.102.90","5":"NA","6":"NA","7":"NA","8":"NA","9":"Declaro que li e entendi os objetivos deste estudo. Estou ciente de que a participação é voluntária, e que, a qualquer momento tenho o direito de obter outros esclarecimentos sobre a pesquisa e de retirar a permissão para participar da mesma, sem qualquer penalidade ou prejuízo","10":"30","11":"Superior Completo","12":"solteiro","13":"homem","14":"NA","15":"Não","16":"Não","17":"Não","18":"não","19":"NA","20":"ooc30","21":"10","22":"1","23":"0","24":"0","25":"0","26":"0.000000","27":"10","28":"1","29":"5.5","30":"70","31":"70","32":"80","33":"20","34":"85","35":"0","36":"61","37":"100","38":"100","39":"100","40":"65","41":"100","42":"50","43":"70","44":"50","45":"100","46":"100","47":"0","48":"100","49":"100","50":"0 Não sou nada favorável a nenhuma ideia","51":"neutro","52":"NA","53":"NA","54":"NA","55":"NA","56":"0","57":"estudo 3","58":"0","59":"1"},{"1":"3","2":"2020-08-14 16:39:01","3":"2020-08-14 16:43:25","4":"187.57.171.29","5":"NA","6":"NA","7":"NA","8":"NA","9":"Declaro que li e entendi os objetivos deste estudo. Estou ciente de que a participação é voluntária, e que, a qualquer momento tenho o direito de obter outros esclarecimentos sobre a pesquisa e de retirar a permissão para participar da mesma, sem qualquer penalidade ou prejuízo","10":"21","11":"Superio Incompleto","12":"solteiro","13":"homem","14":"NA","15":"Não","16":"Não","17":"Não","18":"não","19":"NA","20":"LCB21","21":"4","22":"0","23":"0","24":"10","25":"5","26":"5.000000","27":"10","28":"10","29":"10.0","30":"2","31":"4","32":"0","33":"100","34":"100","35":"100","36":"100","37":"100","38":"100","39":"100","40":"100","41":"100","42":"6","43":"100","44":"0","45":"50","46":"100","47":"0","48":"0","49":"100","50":"0 Não sou nada favorável a nenhuma ideia","51":"neutro","52":"NA","53":"NA","54":"NA","55":"NA","56":"0","57":"estudo 3","58":"0","59":"1"}],"options":{"columns":{"min":{},"max":[10]},"rows":{"min":[10],"max":[10]},"pages":{}}}
+  </script>
+</div>
+<p>Primeiros, vamos processar os dados e criar funções que serão úteis para a gente.</p>
+<pre class="r"><code># estudo 1
+compartilhamento1 &lt;- compartilhamento_3_estudos %&gt;%
+  filter(!is.na(decisao_compartilhamento)) %&gt;%
+  filter(estudo == &quot;estudo 1&quot;,
+         genero != &quot;outros&quot;) %&gt;% #exclui outros, pois tem muito poucos casos
+  droplevels() %&gt;%
+  mutate(atitude_lula_bolsonaro_recode =
+           if_else(politico == &quot;Bolsonaro&quot;, atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode))  %&gt;% 
+  filter(atitude_lula_bolsonaro_recode != 0)
+
+# estudo 2
+compartilhamento2 &lt;- compartilhamento_3_estudos %&gt;%
+  filter(!is.na(decisao_compartilhamento)) %&gt;%
+  filter(estudo == &quot;estudo 2&quot;,
+         genero != &quot;outros&quot;) %&gt;% #exclui outros, pois tem muito poucos casos
+  droplevels() %&gt;%
+  mutate(atitude_lula_bolsonaro_recode =
+           if_else(politico == &quot;Bolsonaro&quot;, atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode))  %&gt;% 
+  filter(atitude_lula_bolsonaro_recode != 0)
+
+
+# estudo 3
+compartilhamento3 &lt;- compartilhamento_3_estudos %&gt;%
+  filter(!is.na(decisao_compartilhamento)) %&gt;%
+  filter(estudo == &quot;estudo 3&quot;,
+         genero != &quot;outros&quot;) %&gt;% #exclui outros, pois tem muito poucos casos
+  droplevels() %&gt;%
+  mutate(atitude_lula_bolsonaro_recode = 
+           if_else(politico == &quot;Bolsonaro&quot;, atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode))  %&gt;% 
+  filter(atitude_lula_bolsonaro_recode != 0)
+
+# function to compute p-values based on z-scores (2-tailed z test)
+
+multi_p_value &lt;- function(fit_object) {
+  z &lt;- summary(fit_object)$coefficients/summary(fit_object)$standard.errors
+  p &lt;- (1 - pnorm(abs(z), 0, 1)) * 2
+  p
+}</code></pre>
+</div>
+</div>
+<div id="análise-de-regressão" class="section level1">
+<h1>Análise de Regressão</h1>
+<p>Primeiro vamos rodar todas as análises para o estudo 1. Em seguida, as mesmas análises para o estudo 2 e 3.</p>
+<p>O modelo utilizado foi uma regressão multinomial, já que nossa variável resposta possui três categorias não ordenadas (publicar opção 1, publicar opção 2 ou não publicar nada) e o modelo multinomial é adequado para esse tipo de variável.</p>
+<p>A categoria de referência escolhida em todos os modelos foi publicar a opção 1, pois a hipótese de interesse é veriicar se há diferenças entre Bolsonaristas e Lulistas na escolha pela opção 1 ou 2.</p>
+</div>
+<div id="estudo-1" class="section level1">
+<h1>Estudo 1</h1>
+<pre class="r"><code>fit0 &lt;- multinom(decisao_compartilhamento ~ atitude_lula_bolsonaro_recode,
+                 data = compartilhamento1)</code></pre>
+<pre><code>## # weights:  9 (4 variable)
+## initial  value 160.397394 
+## final  value 154.385299 
+## converged</code></pre>
+<pre class="r"><code>summary(fit0)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ atitude_lula_bolsonaro_recode, 
+##     data = compartilhamento1)
+## 
+## Coefficients:
+##                              (Intercept) atitude_lula_bolsonaro_recode
+## (opção 2)                       0.129370                 -0.0049839205
+## Não publicar nenhuma notícia   -0.376459                 -0.0007111398
+## 
+## Std. Errors:
+##                              (Intercept) atitude_lula_bolsonaro_recode
+## (opção 2)                      0.2058930                   0.003003386
+## Não publicar nenhuma notícia   0.2294026                   0.003341735
+## 
+## Residual Deviance: 308.7706 
+## AIC: 316.7706</code></pre>
+<pre class="r"><code>multi_p_value(fit0)</code></pre>
+<pre><code>##                              (Intercept) atitude_lula_bolsonaro_recode
+## (opção 2)                      0.5297838                    0.09702843
+## Não publicar nenhuma notícia   0.1007889                    0.83147860</code></pre>
+<pre class="r"><code>fit0a &lt;- multinom(decisao_compartilhamento ~ atitude_lula_bolsonaro_recode_abs*politico,
+                 data = compartilhamento1)</code></pre>
+<pre><code>## # weights:  15 (8 variable)
+## initial  value 160.397394 
+## iter  10 value 151.628976
+## final  value 151.628961 
+## converged</code></pre>
+<pre class="r"><code>summary(fit0a)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ atitude_lula_bolsonaro_recode_abs * 
+##     politico, data = compartilhamento1)
+## 
+## Coefficients:
+##                              (Intercept) atitude_lula_bolsonaro_recode_abs
+## (opção 2)                     -0.2217959                      -0.001212279
+## Não publicar nenhuma notícia   0.9296031                      -0.021457445
+##                              politicoLula
+## (opção 2)                       1.0562061
+## Não publicar nenhuma notícia   -0.5446353
+##                              atitude_lula_bolsonaro_recode_abs:politicoLula
+## (opção 2)                                                      -0.004062491
+## Não publicar nenhuma notícia                                    0.009748463
+## 
+## Std. Errors:
+##                              (Intercept) atitude_lula_bolsonaro_recode_abs
+## (opção 2)                      0.9580485                        0.01291989
+## Não publicar nenhuma notícia   0.8745486                        0.01322230
+##                              politicoLula
+## (opção 2)                        1.175118
+## Não publicar nenhuma notícia     1.190037
+##                              atitude_lula_bolsonaro_recode_abs:politicoLula
+## (opção 2)                                                        0.01619159
+## Não publicar nenhuma notícia                                     0.01786671
+## 
+## Residual Deviance: 303.2579 
+## AIC: 319.2579</code></pre>
+<pre class="r"><code>multi_p_value(fit0a)</code></pre>
+<pre><code>##                              (Intercept) atitude_lula_bolsonaro_recode_abs
+## (opção 2)                      0.8169201                         0.9252438
+## Não publicar nenhuma notícia   0.2878038                         0.1046274
+##                              politicoLula
+## (opção 2)                       0.3687545
+## Não publicar nenhuma notícia    0.6471951
+##                              atitude_lula_bolsonaro_recode_abs:politicoLula
+## (opção 2)                                                         0.8018905
+## Não publicar nenhuma notícia                                      0.5853261</code></pre>
+<p>O modelo de regressão mostrou que a variável político (se lulista ou bolsonarista) não é significativa (p = 0.06) quando consideramos escolha da opção 2 em relação à opção 1.</p>
+<p>Como nós vimos que gênero pode ser uma variável relevante na análise descritiva, vamos incluir esta variável na análise (?).</p>
+<pre class="r"><code>fit1 &lt;- multinom(decisao_compartilhamento ~ atitude_lula_bolsonaro_recode*genero,
+                 data = compartilhamento1)</code></pre>
+<pre><code>## # weights:  15 (8 variable)
+## initial  value 160.397394 
+## iter  10 value 148.309687
+## final  value 148.054196 
+## converged</code></pre>
+<pre class="r"><code>summary(fit1)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ atitude_lula_bolsonaro_recode * 
+##     genero, data = compartilhamento1)
+## 
+## Coefficients:
+##                              (Intercept) atitude_lula_bolsonaro_recode
+## (opção 2)                     -0.1497591                   -0.01464782
+## Não publicar nenhuma notícia  -0.6131944                   -0.01006230
+##                              generomulher
+## (opção 2)                       0.7552465
+## Não publicar nenhuma notícia    0.6857436
+##                              atitude_lula_bolsonaro_recode:generomulher
+## (opção 2)                                                    0.02004429
+## Não publicar nenhuma notícia                                 0.01978864
+## 
+## Std. Errors:
+##                              (Intercept) atitude_lula_bolsonaro_recode
+## (opção 2)                      0.3092322                   0.004829380
+## Não publicar nenhuma notícia   0.3405186                   0.005242806
+##                              generomulher
+## (opção 2)                       0.4572038
+## Não publicar nenhuma notícia    0.5003153
+##                              atitude_lula_bolsonaro_recode:generomulher
+## (opção 2)                                                   0.006761101
+## Não publicar nenhuma notícia                                0.007386189
+## 
+## Residual Deviance: 296.1084 
+## AIC: 312.1084</code></pre>
+<pre class="r"><code>multi_p_value(fit1)</code></pre>
+<pre><code>##                              (Intercept) atitude_lula_bolsonaro_recode
+## (opção 2)                     0.62817765                    0.00242084
+## Não publicar nenhuma notícia  0.07173975                    0.05495156
+##                              generomulher
+## (opção 2)                      0.09855871
+## Não publicar nenhuma notícia   0.17049254
+##                              atitude_lula_bolsonaro_recode:generomulher
+## (opção 2)                                                   0.003030288
+## Não publicar nenhuma notícia                                0.007381135</code></pre>
+<p>Como é possível ver, o ajuste do modelo, medido pelo AIC, é só um pouco melhor (313 versus 315), e gênero é signficativo (mulher escolhe mais opção 2 e nenhum notícia, versus opcão 1) e também o termo de interação (lulistas homens compartilham mais a opção 2 em relação à opção 1).</p>
+<p>Vamos agora incluir idade no modelo, que, como vimos, é uma variável importante.</p>
+<pre class="r"><code>fit2 &lt;- multinom(decisao_compartilhamento ~ politico*genero + idade,
+                 data = compartilhamento1)</code></pre>
+<pre><code>## # weights:  18 (10 variable)
+## initial  value 160.397394 
+## iter  10 value 147.907208
+## final  value 147.889817 
+## converged</code></pre>
+<pre class="r"><code>summary(fit2)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico * genero + 
+##     idade, data = compartilhamento1)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula generomulher        idade
+## (opção 2)                     -0.4161644     1.520311     1.597039 -0.011557793
+## Não publicar nenhuma notícia  -1.5850681     1.365913     2.140963  0.005877473
+##                              politicoLula:generomulher
+## (opção 2)                                    -1.988556
+## Não publicar nenhuma notícia                 -2.823111
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula generomulher      idade
+## (opção 2)                      0.7671292    0.6078448    0.7812011 0.01386376
+## Não publicar nenhuma notícia   0.9152670    0.7064183    0.8240105 0.01602324
+##                              politicoLula:generomulher
+## (opção 2)                                    0.9124765
+## Não publicar nenhuma notícia                 1.0059503
+## 
+## Residual Deviance: 295.7796 
+## AIC: 315.7796</code></pre>
+<pre class="r"><code>multi_p_value(fit2)</code></pre>
+<pre><code>##                              (Intercept) politicoLula generomulher     idade
+## (opção 2)                     0.58747700   0.01237906  0.040920201 0.4044673
+## Não publicar nenhuma notícia  0.08330748   0.05316531  0.009370747 0.7137613
+##                              politicoLula:generomulher
+## (opção 2)                                  0.029309689
+## Não publicar nenhuma notícia               0.005009663</code></pre>
+<p>Para entender os coeficientes, vamos usar a função predict.</p>
+<pre class="r"><code># cria um banco com cada perfil de político e gênero, sempre com idade média
+compartilhamento1_predict &lt;- compartilhamento1 %&gt;%
+  mutate(idade = mean(idade)) %&gt;%
+  dplyr::filter(e_mail %in% c(&quot;Thais.martinezgarcia@gmail.com&quot;, &quot;miltonmorelli@globo.com&quot;, 
+                              &quot;delma.i.nakao@globo.com&quot; , &quot;Rick.bertozzi@gmail.com&quot;)) %&gt;%
+  dplyr::select( idade, genero, politico)
+
+# vê os perfis criados
+glimpse(compartilhamento1_predict)</code></pre>
+<pre><code>## Rows: 4
+## Columns: 3
+## $ idade    &lt;dbl&gt; 37.43836, 37.43836, 37.43836, 37.43836
+## $ genero   &lt;fct&gt; mulher, homem, mulher, homem
+## $ politico &lt;fct&gt; Bolsonaro, Bolsonaro, Lula, Lula</code></pre>
+<pre class="r"><code>my_predict &lt;- predict(fit2, newdata = compartilhamento1_predict, type = &quot;probs&quot;, se.fit = T)
+
+# vê as previsões
+print(my_predict)</code></pre>
+<pre><code>##   (opção 1) (opção 2) Não publicar nenhuma notícia
+## 1 0.1891876 0.3997778                    0.4110346
+## 2 0.5940808 0.2542063                    0.1517129
+## 3 0.3534806 0.4676655                    0.1788539
+## 4 0.2526563 0.4944629                    0.2528808</code></pre>
+<p>A função predict mostra as probabilidades de cada categoria, para cada combinação de perfil.</p>
+<pre class="r"><code>fit3 &lt;- multinom(decisao_compartilhamento ~ politico*genero + idade + score_id_nac + score_narcissism,
+                 data = compartilhamento1)</code></pre>
+<pre><code>## # weights:  24 (14 variable)
+## initial  value 160.397394 
+## iter  10 value 150.032661
+## final  value 146.777067 
+## converged</code></pre>
+<pre class="r"><code>summary(fit3)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico * genero + 
+##     idade + score_id_nac + score_narcissism, data = compartilhamento1)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula generomulher        idade
+## (opção 2)                     -0.0162082     1.523773     1.589918 -0.010901068
+## Não publicar nenhuma notícia  -0.6814391     1.393196     2.155206  0.008584545
+##                              score_id_nac score_narcissism
+## (opção 2)                     -0.07161388      0.023548507
+## Não publicar nenhuma notícia  -0.14911659      0.009688964
+##                              politicoLula:generomulher
+## (opção 2)                                    -1.974957
+## Não publicar nenhuma notícia                 -2.812170
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula generomulher      idade
+## (opção 2)                      0.9645593    0.6083921    0.7827586 0.01394539
+## Não publicar nenhuma notícia   1.1094143    0.7152594    0.8349515 0.01626241
+##                              score_id_nac score_narcissism
+## (opção 2)                       0.0970541       0.09092679
+## Não publicar nenhuma notícia    0.1097616       0.10874080
+##                              politicoLula:generomulher
+## (opção 2)                                    0.9149026
+## Não publicar nenhuma notícia                 1.0153544
+## 
+## Residual Deviance: 293.5541 
+## AIC: 321.5541</code></pre>
+<pre class="r"><code>multi_p_value(fit3)</code></pre>
+<pre><code>##                              (Intercept) politicoLula generomulher     idade
+## (opção 2)                      0.9865932   0.01225935  0.042237443 0.4343929
+## Não publicar nenhuma notícia   0.5390612   0.05143653  0.009844747 0.5975851
+##                              score_id_nac score_narcissism
+## (opção 2)                       0.4605899        0.7956482
+## Não publicar nenhuma notícia    0.1742891        0.9290013
+##                              politicoLula:generomulher
+## (opção 2)                                  0.030877106
+## Não publicar nenhuma notícia               0.005611764</code></pre>
+<p>Vamos, por fim, incluir as variáveis narcisimo e nacionalismo.</p>
+<p>O AIC é similar ao do modelo 1, indicando que não há ganho preditivo (in sample). Vemos que idade não é significativo, indicando que o modelo entendeu que o político é mais relevante que idade. Preciso ainda rodar para o estudo 2 e 3.</p>
+<p>Rodando agora o modelo apenas com os scores</p>
+<pre class="r"><code>fit4 &lt;- multinom(decisao_compartilhamento ~  score_id_nac + score_narcissism,
+                 data = compartilhamento1)</code></pre>
+<pre><code>## # weights:  12 (6 variable)
+## initial  value 160.397394 
+## iter  10 value 154.814898
+## iter  10 value 154.814897
+## iter  10 value 154.814897
+## final  value 154.814897 
+## converged</code></pre>
+<pre class="r"><code>summary(fit4)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ score_id_nac + 
+##     score_narcissism, data = compartilhamento1)
+## 
+## Coefficients:
+##                              (Intercept) score_id_nac score_narcissism
+## (opção 2)                      0.7759330   -0.0794206       0.01497216
+## Não publicar nenhuma notícia   0.6559345   -0.1548266       0.02309448
+## 
+## Std. Errors:
+##                              (Intercept) score_id_nac score_narcissism
+## (opção 2)                      0.6625442   0.09284616       0.08759455
+## Não publicar nenhuma notícia   0.7380286   0.10744153       0.10399648
+## 
+## Residual Deviance: 309.6298 
+## AIC: 321.6298</code></pre>
+<pre class="r"><code>multi_p_value(fit4)</code></pre>
+<pre><code>##                              (Intercept) score_id_nac score_narcissism
+## (opção 2)                      0.2415419    0.3923298        0.8642822
+## Não publicar nenhuma notícia   0.3741290    0.1495758        0.8242595</code></pre>
+<p>Como a amostra de cada estudo é pequena, vale a pena considerar também um modelo hierárquico que junte os três estudos, de modo a ampliar a amostra e estabilizar as estimativas. Esse será o próximo passo.</p>
+</div>
+<div id="regressões-para-o-estudo-2" class="section level1">
+<h1>regressões para o estudo 2</h1>
+<pre class="r"><code>fit0_2 &lt;- multinom(decisao_compartilhamento ~ politico,
+                 data = compartilhamento2)</code></pre>
+<pre><code>## # weights:  9 (4 variable)
+## initial  value 165.890456 
+## final  value 159.962606 
+## converged</code></pre>
+<pre class="r"><code>summary(fit0_2)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico, data = compartilhamento2)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula
+## (opção 2)                      0.3364551   0.47449823
+## Não publicar nenhuma notícia   0.3829572  -0.04646932
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula
+## (opção 2)                      0.3380596    0.4318647
+## Não publicar nenhuma notícia   0.3348442    0.4447873
+## 
+## Residual Deviance: 319.9252 
+## AIC: 327.9252</code></pre>
+<pre class="r"><code>multi_p_value(fit0_2)</code></pre>
+<pre><code>##                              (Intercept) politicoLula
+## (opção 2)                      0.3196128    0.2718904
+## Não publicar nenhuma notícia   0.2527531    0.9167921</code></pre>
+<p>O modelo de regressão mostrou que a variável político (se lulista ou bolsonarista) não é significativo.</p>
+<p>Como nós vimos que gênero pode ser uma variável relevante, vamos incluir esta variável na análise.</p>
+<pre class="r"><code>fit1_2 &lt;- multinom(decisao_compartilhamento ~ politico*genero,
+                 data = compartilhamento2)</code></pre>
+<pre><code>## # weights:  15 (8 variable)
+## initial  value 165.890456 
+## iter  10 value 158.968933
+## final  value 158.966797 
+## converged</code></pre>
+<pre class="r"><code>summary(fit1_2)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico * genero, 
+##     data = compartilhamento2)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula generomulher
+## (opção 2)                      0.2623647   0.96141642    0.2076414
+## Não publicar nenhuma notícia   0.2623716   0.07410667    0.3254169
+##                              politicoLula:generomulher
+## (opção 2)                                   -0.8072710
+## Não publicar nenhuma notícia                -0.3254222
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula generomulher
+## (opção 2)                      0.4206228    0.6601121    0.7084658
+## Não publicar nenhuma notícia   0.4206222    0.7209583    0.6985946
+##                              politicoLula:generomulher
+## (opção 2)                                    0.9290474
+## Não publicar nenhuma notícia                 0.9722026
+## 
+## Residual Deviance: 317.9336 
+## AIC: 333.9336</code></pre>
+<pre class="r"><code>multi_p_value(fit1_2)</code></pre>
+<pre><code>##                              (Intercept) politicoLula generomulher
+## (opção 2)                      0.5327898    0.1452699    0.7694564
+## Não publicar nenhuma notícia   0.5327784    0.9181303    0.6413469
+##                              politicoLula:generomulher
+## (opção 2)                                    0.3848891
+## Não publicar nenhuma notícia                 0.7378312</code></pre>
+<p>Como é possível ver, o ajuste do modelo, medido pelo AIC, é um pouco pior e nenhuma variável é significativa.</p>
+<p>Vamos agora incluir idade no modelo, que, como vimos, é uma variável importante.</p>
+<pre class="r"><code>fit2_2 &lt;- multinom(decisao_compartilhamento ~ politico*genero + idade,
+                 data = compartilhamento2)</code></pre>
+<pre><code>## # weights:  18 (10 variable)
+## initial  value 165.890456 
+## iter  10 value 157.665785
+## final  value 157.602323 
+## converged</code></pre>
+<pre class="r"><code>summary(fit2_2)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico * genero + 
+##     idade, data = compartilhamento2)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula generomulher
+## (opção 2)                      0.2761755    0.9576054    0.2088846
+## Não publicar nenhuma notícia  -0.6757186    0.3518253    0.2670499
+##                                      idade politicoLula:generomulher
+## (opção 2)                    -0.0003728192                -0.8086558
+## Não publicar nenhuma notícia  0.0235677577                -0.2550192
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula generomulher      idade
+## (opção 2)                      0.8238636    0.6882875    0.7112213 0.01910041
+## Não publicar nenhuma notícia   0.8486360    0.7567560    0.7058401 0.01872037
+##                              politicoLula:generomulher
+## (opção 2)                                    0.9317888
+## Não publicar nenhuma notícia                 0.9795499
+## 
+## Residual Deviance: 315.2046 
+## AIC: 335.2046</code></pre>
+<pre class="r"><code>multi_p_value(fit2_2)</code></pre>
+<pre><code>##                              (Intercept) politicoLula generomulher     idade
+## (opção 2)                      0.7374592    0.1641384    0.7689884 0.9844272
+## Não publicar nenhuma notícia   0.4258921    0.6419941    0.7051755 0.2080534
+##                              politicoLula:generomulher
+## (opção 2)                                    0.3854747
+## Não publicar nenhuma notícia                 0.7945990</code></pre>
+<p>Novamente, nada significativo.</p>
+<pre class="r"><code>fit3_2 &lt;- multinom(decisao_compartilhamento ~ politico*genero + idade + score_id_nac + score_narcissism,
+                 data = compartilhamento2)</code></pre>
+<pre><code>## # weights:  24 (14 variable)
+## initial  value 165.890456 
+## iter  10 value 156.897985
+## final  value 156.003875 
+## converged</code></pre>
+<pre class="r"><code>summary(fit3_2)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico * genero + 
+##     idade + score_id_nac + score_narcissism, data = compartilhamento2)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula generomulher        idade
+## (opção 2)                     -0.9229516    1.2437366    0.2068897 -0.002032034
+## Não publicar nenhuma notícia  -0.8564748    0.3901759    0.2573504  0.023416644
+##                              score_id_nac score_narcissism
+## (opção 2)                      0.09486393       0.09903152
+## Não publicar nenhuma notícia   0.01629764       0.01345500
+##                              politicoLula:generomulher
+## (opção 2)                                   -0.9444122
+## Não publicar nenhuma notícia                -0.2686723
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula generomulher      idade
+## (opção 2)                       1.250387    0.7242612    0.7250922 0.01959657
+## Não publicar nenhuma notícia    1.263482    0.7816108    0.7170237 0.01910450
+##                              score_id_nac score_narcissism
+## (opção 2)                        0.127746        0.1223371
+## Não publicar nenhuma notícia     0.130810        0.1247750
+##                              politicoLula:generomulher
+## (opção 2)                                    0.9436277
+## Não publicar nenhuma notícia                 0.9830107
+## 
+## Residual Deviance: 312.0078 
+## AIC: 340.0078</code></pre>
+<pre class="r"><code>multi_p_value(fit3_2)</code></pre>
+<pre><code>##                              (Intercept) politicoLula generomulher     idade
+## (opção 2)                      0.4604337   0.08593377    0.7753922 0.9174127
+## Não publicar nenhuma notícia   0.4978551   0.61764234    0.7196588 0.2203065
+##                              score_id_nac score_narcissism
+## (opção 2)                       0.4577249        0.4182294
+## Não publicar nenhuma notícia    0.9008480        0.9141273
+##                              politicoLula:generomulher
+## (opção 2)                                    0.3169083
+## Não publicar nenhuma notícia                 0.7846106</code></pre>
+<p>Rodando agora o modelo apenas com os scores</p>
+<pre class="r"><code>fit4_2 &lt;- multinom(decisao_compartilhamento ~  score_id_nac + score_narcissism,
+                 data = compartilhamento2)</code></pre>
+<pre><code>## # weights:  12 (6 variable)
+## initial  value 165.890456 
+## iter  10 value 160.462262
+## iter  10 value 160.462262
+## iter  10 value 160.462262
+## final  value 160.462262 
+## converged</code></pre>
+<pre class="r"><code>summary(fit4_2)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ score_id_nac + 
+##     score_narcissism, data = compartilhamento2)
+## 
+## Coefficients:
+##                              (Intercept) score_id_nac score_narcissism
+## (opção 2)                    0.004549594  0.045203551       0.06974569
+## Não publicar nenhuma notícia 0.220536434 -0.002701262       0.03956966
+## 
+## Std. Errors:
+##                              (Intercept) score_id_nac score_narcissism
+## (opção 2)                      0.8087356    0.1193645        0.1146712
+## Não publicar nenhuma notícia   0.8254482    0.1236466        0.1208420
+## 
+## Residual Deviance: 320.9245 
+## AIC: 332.9245</code></pre>
+<pre class="r"><code>multi_p_value(fit4_2)</code></pre>
+<pre><code>##                              (Intercept) score_id_nac score_narcissism
+## (opção 2)                      0.9955115    0.7049093        0.5430393
+## Não publicar nenhuma notícia   0.7893369    0.9825703        0.7433279</code></pre>
+</div>
+<div id="estudo-3" class="section level1">
+<h1>Estudo 3</h1>
+<pre class="r"><code>fit0_3 &lt;- multinom(decisao_compartilhamento ~ politico,
+                 data = compartilhamento3)</code></pre>
+<pre><code>## # weights:  9 (4 variable)
+## initial  value 156.002945 
+## final  value 150.569085 
+## converged</code></pre>
+<pre class="r"><code>summary(fit0_3)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico, data = compartilhamento3)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula
+## (opção 2)                    -0.05128536   0.59361005
+## Não publicar nenhuma notícia -0.22315138  -0.05127532
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula
+## (opção 2)                      0.3203611    0.4072925
+## Não publicar nenhuma notícia   0.3354110    0.4529148
+## 
+## Residual Deviance: 301.1382 
+## AIC: 309.1382</code></pre>
+<pre class="r"><code>multi_p_value(fit0_3)</code></pre>
+<pre><code>##                              (Intercept) politicoLula
+## (opção 2)                      0.8728132    0.1449911
+## Não publicar nenhuma notícia   0.5058540    0.9098626</code></pre>
+<p>O modelo de regressão mostrou que a variável político (se lulista ou bolsonarista) não é significativo.</p>
+<p>Como nós vimos que gênero pode ser uma variável relevante, vamos incluir esta variável na análise.</p>
+<pre class="r"><code>fit1_3 &lt;- multinom(decisao_compartilhamento ~ politico*genero,
+                 data = compartilhamento3)</code></pre>
+<pre><code>## # weights:  15 (8 variable)
+## initial  value 156.002945 
+## iter  10 value 149.177934
+## final  value 149.177422 
+## converged</code></pre>
+<pre class="r"><code>summary(fit1_3)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico * genero, 
+##     data = compartilhamento3)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula generomulher
+## (opção 2)                     -0.2623518   0.86848341    0.5136490
+## Não publicar nenhuma notícia  -0.6190441   0.08006855    0.8703388
+##                              politicoLula:generomulher
+## (opção 2)                                   -0.6402040
+## Não publicar nenhuma notícia                -0.4114037
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula generomulher
+## (opção 2)                      0.4206214    0.5529110    0.6564215
+## Não publicar nenhuma notícia   0.4688087    0.6678094    0.6882940
+##                              politicoLula:generomulher
+## (opção 2)                                    0.8271757
+## Não publicar nenhuma notícia                 0.9274659
+## 
+## Residual Deviance: 298.3548 
+## AIC: 314.3548</code></pre>
+<pre class="r"><code>multi_p_value(fit1_3)</code></pre>
+<pre><code>##                              (Intercept) politicoLula generomulher
+## (opção 2)                      0.5328086    0.1162414    0.4339215
+## Não publicar nenhuma notícia   0.1866808    0.9045645    0.2060553
+##                              politicoLula:generomulher
+## (opção 2)                                    0.4389522
+## Não publicar nenhuma notícia                 0.6573476</code></pre>
+<p>Como é possível ver, o ajuste do modelo, medido pelo AIC, é só um pouco melhor (313 versus 315), e gênero é signficativo (mulher escolhe mais opção 2 e nenhum notícia, versus opcão 1) e também o term ode interação (lulistas mulheres compartilham mais a opção 2 ou não publicam nenhuma notícia em relação à opção 1).</p>
+<p>Vamos agora incluir idade no modelo, que, como vimos, é uma variável importante.</p>
+<pre class="r"><code>fit2_3 &lt;- multinom(decisao_compartilhamento ~ politico*genero + idade,
+                 data = compartilhamento3)</code></pre>
+<pre><code>## # weights:  18 (10 variable)
+## initial  value 156.002945 
+## iter  10 value 148.917222
+## final  value 148.911205 
+## converged</code></pre>
+<pre class="r"><code>summary(fit2_3)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico * genero + 
+##     idade, data = compartilhamento3)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula generomulher        idade
+## (opção 2)                      0.2411516   0.72816542    0.5189854 -0.010917115
+## Não publicar nenhuma notícia  -0.1620375  -0.04738382    0.8751477 -0.009888805
+##                              politicoLula:generomulher
+## (opção 2)                                   -0.5839492
+## Não publicar nenhuma notícia                -0.3601570
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula generomulher      idade
+## (opção 2)                      0.8429779    0.5889304    0.6576939 0.01585083
+## Não publicar nenhuma notícia   0.9510191    0.7069004    0.6893331 0.01797851
+##                              politicoLula:generomulher
+## (opção 2)                                    0.8323267
+## Não publicar nenhuma notícia                 0.9328007
+## 
+## Residual Deviance: 297.8224 
+## AIC: 317.8224</code></pre>
+<pre class="r"><code>multi_p_value(fit2_3)</code></pre>
+<pre><code>##                              (Intercept) politicoLula generomulher     idade
+## (opção 2)                      0.7748237    0.2163024    0.4300543 0.4909864
+## Não publicar nenhuma notícia   0.8647089    0.9465575    0.2042425 0.5822956
+##                              politicoLula:generomulher
+## (opção 2)                                    0.4829370
+## Não publicar nenhuma notícia                 0.6994205</code></pre>
+<pre class="r"><code>fit3_3 &lt;- multinom(decisao_compartilhamento ~ politico*genero + idade + score_id_nac + score_narcissism,
+                 data = compartilhamento3)</code></pre>
+<pre><code>## # weights:  24 (14 variable)
+## initial  value 156.002945 
+## iter  10 value 147.389210
+## final  value 146.278499 
+## converged</code></pre>
+<pre class="r"><code>summary(fit3_3)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico * genero + 
+##     idade + score_id_nac + score_narcissism, data = compartilhamento3)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula generomulher       idade
+## (opção 2)                       0.371867    0.8616508    0.6529364 -0.01721175
+## Não publicar nenhuma notícia    1.176351   -0.1873182    0.9632889 -0.01340221
+##                              score_id_nac score_narcissism
+## (opção 2)                     -0.07758037       0.14071303
+## Não publicar nenhuma notícia  -0.18788839       0.07640069
+##                              politicoLula:generomulher
+## (opção 2)                                   -0.7179925
+## Não publicar nenhuma notícia                -0.5770276
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula generomulher      idade
+## (opção 2)                       1.189378    0.6165907    0.6684781 0.01648040
+## Não publicar nenhuma notícia    1.318324    0.7373881    0.7037150 0.01894192
+##                              score_id_nac score_narcissism
+## (opção 2)                       0.1005430       0.08959361
+## Não publicar nenhuma notícia    0.1132707       0.10370255
+##                              politicoLula:generomulher
+## (opção 2)                                    0.8468278
+## Não publicar nenhuma notícia                 0.9521614
+## 
+## Residual Deviance: 292.557 
+## AIC: 320.557</code></pre>
+<pre class="r"><code>multi_p_value(fit3_3)</code></pre>
+<pre><code>##                              (Intercept) politicoLula generomulher     idade
+## (opção 2)                      0.7545415    0.1622802    0.3286927 0.2963110
+## Não publicar nenhuma notícia   0.3722278    0.7994729    0.1710423 0.4792296
+##                              score_id_nac score_narcissism
+## (opção 2)                      0.44034335        0.1162826
+## Não publicar nenhuma notícia   0.09716498        0.4612871
+##                              politicoLula:generomulher
+## (opção 2)                                    0.3965153
+## Não publicar nenhuma notícia                 0.5445024</code></pre>
+<p>Vamos, por fim, incluir as variáveis narcisimo e nacionalismo.</p>
+<p>O AIC é similar ao do modelo 1, indicando que não há ganho preditivo (in sample). Vemos que idade não é significativo, indicando que o modelo entendeu que o político é mais relevante que idade. Preciso ainda rodar para o estudo 2 e 3.</p>
+<p>Rodando agora o modelo apenas com os scores</p>
+<pre class="r"><code>fit4_3 &lt;- multinom(decisao_compartilhamento ~  score_id_nac + score_narcissism,
+                 data = compartilhamento3)</code></pre>
+<pre><code>## # weights:  12 (6 variable)
+## initial  value 156.002945 
+## iter  10 value 150.652279
+## iter  10 value 150.652278
+## iter  10 value 150.652278
+## final  value 150.652278 
+## converged</code></pre>
+<pre class="r"><code>summary(fit4_3)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ score_id_nac + 
+##     score_narcissism, data = compartilhamento3)
+## 
+## Coefficients:
+##                              (Intercept) score_id_nac score_narcissism
+## (opção 2)                      0.7444146  -0.09686999       0.07456333
+## Não publicar nenhuma notícia   0.7346542  -0.15907299       0.05110953
+## 
+## Std. Errors:
+##                              (Intercept) score_id_nac score_narcissism
+## (opção 2)                      0.6988381   0.09414586       0.08130905
+## Não publicar nenhuma notícia   0.7554182   0.10513305       0.09463454
+## 
+## Residual Deviance: 301.3046 
+## AIC: 313.3046</code></pre>
+<pre class="r"><code>multi_p_value(fit4_3)</code></pre>
+<pre><code>##                              (Intercept) score_id_nac score_narcissism
+## (opção 2)                      0.2867775    0.3035101        0.3591237
+## Não publicar nenhuma notícia   0.3307953    0.1302635        0.5891469</code></pre>
+</div>
+<div id="agora-vamos-juntar-tudo-em-uma-regressão-só" class="section level1">
+<h1>Agora, vamos juntar tudo em uma regressão só</h1>
+<pre class="r"><code># criando banco
+compartilhamento_all &lt;- compartilhamento_3_estudos %&gt;%
+  filter(!is.na(decisao_compartilhamento)) %&gt;%
+  filter(genero != &quot;outros&quot;) %&gt;% #exclui outros, pois tem muito poucos casos
+  droplevels() %&gt;%
+  mutate(atitude_lula_bolsonaro_recode = if_else(politico == &quot;Bolsonaro&quot;, atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode))</code></pre>
+<div id="rodando-as-regressões-todas-juntas" class="section level2">
+<h2>rodando as regressões todas juntas</h2>
+<pre class="r"><code>fit4_1 &lt;- multinom(decisao_compartilhamento ~  politico*estudo,
+                 data = compartilhamento_all)</code></pre>
+<pre><code>## # weights:  21 (12 variable)
+## initial  value 482.290795 
+## iter  10 value 464.880441
+## final  value 464.260641 
+## converged</code></pre>
+<pre class="r"><code>summary(fit4_1)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico * estudo, 
+##     data = compartilhamento_all)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula estudoestudo 2
+## (opção 2)                     -0.3053258   0.79593088      0.6417992
+## Não publicar nenhuma notícia  -0.3794378   0.02273508      0.7624210
+##                              estudoestudo 3 politicoLula:estudoestudo 2
+## (opção 2)                         0.2539953                 -0.32146535
+## Não publicar nenhuma notícia      0.1562607                 -0.06922631
+##                              politicoLula:estudoestudo 3
+## (opção 2)                                    -0.20227416
+## Não publicar nenhuma notícia                 -0.07398531
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula estudoestudo 2
+## (opção 2)                      0.3522216    0.4216648      0.4882063
+## Não publicar nenhuma notícia   0.3599372    0.4588107      0.4916056
+##                              estudoestudo 3 politicoLula:estudoestudo 2
+## (opção 2)                         0.4761211                   0.6035803
+## Não publicar nenhuma notícia      0.4919902                   0.6390172
+##                              politicoLula:estudoestudo 3
+## (opção 2)                                      0.5862494
+## Não publicar nenhuma notícia                   0.6447001
+## 
+## Residual Deviance: 928.5213 
+## AIC: 952.5213</code></pre>
+<pre class="r"><code>multi_p_value(fit4_1)</code></pre>
+<pre><code>##                              (Intercept) politicoLula estudoestudo 2
+## (opção 2)                      0.3860204   0.05908078      0.1886422
+## Não publicar nenhuma notícia   0.2918014   0.96047925      0.1209306
+##                              estudoestudo 3 politicoLula:estudoestudo 2
+## (opção 2)                         0.5937098                   0.5943123
+## Não publicar nenhuma notícia      0.7507813                   0.9137320
+##                              politicoLula:estudoestudo 3
+## (opção 2)                                      0.7300711
+## Não publicar nenhuma notícia                   0.9086359</code></pre>
+<p>Agora com gênero</p>
+<pre class="r"><code>fit4_2 &lt;- multinom(decisao_compartilhamento ~  politico*estudo + politico*genero,
+                 data = compartilhamento_all)</code></pre>
+<pre><code>## # weights:  27 (16 variable)
+## initial  value 482.290795 
+## iter  10 value 461.387458
+## iter  20 value 459.817287
+## iter  20 value 459.817286
+## iter  20 value 459.817286
+## final  value 459.817286 
+## converged</code></pre>
+<pre class="r"><code>summary(fit4_2)</code></pre>
+<pre><code>## Call:
+## multinom(formula = decisao_compartilhamento ~ politico * estudo + 
+##     politico * genero, data = compartilhamento_all)
+## 
+## Coefficients:
+##                              (Intercept) politicoLula estudoestudo 2
+## (opção 2)                     -0.6297730    1.3040259      0.7265904
+## Não publicar nenhuma notícia  -0.8620576    0.5511436      0.8814548
+##                              estudoestudo 3 generomulher
+## (opção 2)                         0.2633088    0.7756407
+## Não publicar nenhuma notícia      0.1690397    1.0637949
+##                              politicoLula:estudoestudo 2
+## (opção 2)                                     -0.3468934
+## Não publicar nenhuma notícia                  -0.1747676
+##                              politicoLula:estudoestudo 3
+## (opção 2)                                    -0.20831532
+## Não publicar nenhuma notícia                 -0.08599331
+##                              politicoLula:generomulher
+## (opção 2)                                     -1.12643
+## Não publicar nenhuma notícia                  -1.14601
+## 
+## Std. Errors:
+##                              (Intercept) politicoLula estudoestudo 2
+## (opção 2)                      0.3970375    0.4867335      0.4963737
+## Não publicar nenhuma notícia   0.4173303    0.5413687      0.5056072
+##                              estudoestudo 3 generomulher
+## (opção 2)                         0.4822915    0.4094729
+## Não publicar nenhuma notícia      0.5033122    0.4173355
+##                              politicoLula:estudoestudo 2
+## (opção 2)                                      0.6128206
+## Não publicar nenhuma notícia                   0.6524639
+##                              politicoLula:estudoestudo 3
+## (opção 2)                                      0.5918370
+## Não publicar nenhuma notícia                   0.6534171
+##                              politicoLula:generomulher
+## (opção 2)                                    0.5056895
+## Não publicar nenhuma notícia                 0.5449884
+## 
+## Residual Deviance: 919.6346 
+## AIC: 951.6346</code></pre>
+<pre class="r"><code>multi_p_value(fit4_2)</code></pre>
+<pre><code>##                              (Intercept) politicoLula estudoestudo 2
+## (opção 2)                     0.11269845  0.007381215     0.14324938
+## Não publicar nenhuma notícia  0.03886171  0.308651325     0.08127093
+##                              estudoestudo 3 generomulher
+## (opção 2)                         0.5850978   0.05819295
+## Não publicar nenhuma notícia      0.7369806   0.01080273
+##                              politicoLula:estudoestudo 2
+## (opção 2)                                      0.5713528
+## Não publicar nenhuma notícia                   0.7888087
+##                              politicoLula:estudoestudo 3
+## (opção 2)                                      0.7248526
+## Não publicar nenhuma notícia                   0.8952963
+##                              politicoLula:generomulher
+## (opção 2)                                   0.02591303
+## Não publicar nenhuma notícia                0.03548184</code></pre>
+</div>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
