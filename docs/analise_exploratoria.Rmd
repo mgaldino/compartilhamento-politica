@@ -1,0 +1,303 @@
+---
+title: "Análise Exploratória"
+output:
+  html_document:
+    df_print: paged
+---
+
+Análise de dados do paper sobre compartilhamento de notícias e política.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = T)
+```
+
+
+```{r, results='hide', message=F}
+# loading libraries
+library(here, quietly=T)
+library(dplyr, quietly=T)
+library(tidyr, quietly=T)
+library(ggplot2, quietly=T)
+library(MNP, quietly=T)
+library(nnet, quietly=T)
+library(janitor, quietly = T)
+library(arm, quietly=T)
+
+
+```
+
+Vamos importar os dados já processados:
+
+```{r, message = FALSE, include = T,  results='hide'}
+here()
+
+# importando dados processados
+compartilhamento_3_estudos <- readRDS("Transformados/compartilhamento_3_estudos.rds")
+summary(compartilhamento_3_estudos)
+```
+
+# Análise Exploratória dos Dados
+
+```{r, message = FALSE}
+# amostra por estudo
+compartilhamento_3_estudos %>%
+  group_by(Estudo) %>%
+  summarise(amostra_total = n())
+
+# amostra por estudo e político
+compartilhamento_3_estudos %>%
+  group_by(Estudo, politico_escolhido) %>%
+  summarise(amostra_total = n(), .groups="drop_last") %>%
+  mutate(subtotal_estudo = sum(amostra_total),
+         perc_politico = round(amostra_total/subtotal_estudo, 2))
+
+# amostra por estudo e escala lula-bolsonaro
+compartilhamento_3_estudos %>%
+  group_by(Estudo, decisao_compartilhamento) %>%
+  summarise(amostra_total = n(), .groups="drop_last",
+            escala_media = mean(nivel_identificacao_recode)) %>%
+  drop_na()
+
+```
+
+```{r, message = FALSE}
+# demográficos por estudo e político
+
+# gênero (percentual por estudo)
+compartilhamento_3_estudos %>%
+  group_by(genero, estudo) %>%
+  summarise(amostra_total = n(), .groups="drop") %>%
+  mutate(subtotal_estudo = sum(amostra_total),
+         perc_genero = round(amostra_total/subtotal_estudo, 3)) %>%
+  arrange(estudo)
+
+# recode média
+compartilhamento_3_estudos %>%
+  group_by(Estudo, politico_escolhido) %>%
+  summarise(nivel_identificacao_recode_mediana = median(nivel_identificacao_recode), .groups="drop")
+
+compartilhamento_3_estudos %>%
+  group_by(Estudo, politico_escolhido) %>%
+  summarise(nivel_identificacao_recode_mediana = median(nivel_identificacao_recode_alt), .groups="drop")
+
+# idade média
+compartilhamento_3_estudos %>%
+  group_by(Estudo, politico_escolhido) %>%
+  summarise(idade_mediana = median(idade), .groups="drop")
+
+# 
+# escolaridade (percentual por estudo)
+escol <- compartilhamento_3_estudos %>%
+  group_by(grau_de_escolaridade, Estudo) %>%
+  summarise(amostra_total = n(), .groups="drop") %>%
+  mutate(subtotal_estudo = sum(amostra_total),
+         perc_escolaridade = round(amostra_total/subtotal_estudo, 3)) %>%
+  arrange(estudo)
+
+```
+
+Agora, alguns gráficos
+
+```{r, message = FALSE}
+# gráfico de barra de escolaridade
+
+escol %>%
+  ggplot(aes(y=perc_escolaridade, x=grau_de_escolaridade)) + geom_col() +
+  coord_flip() + scale_y_continuous(labels = scales::percent) +
+  facet_wrap(~estudo)
+```
+
+```{r, message = FALSE}
+# cruzamento entre liberal-conservador e bolsonarismo ou lulismo
+
+# primeiro, coloco Lula como número negativo, ou seja, 80 lula é -80 etc.
+ideologia <- compartilhamento_3_estudos %>%
+  mutate(liberal_conservador = as.numeric(liberal_conservador),
+    atitude_lula_bolsonaro_recode = if_else(politico == "Bolsonaro", atitude_lula_bolsonaro_recode, -atitude_lula_bolsonaro_recode))
+
+ideologia %>%
+  filter(!is.na(atitude_lula_bolsonaro_recode)) %>%
+  summarise(amostra = n(),
+            cor(liberal_conservador, atitude_lula_bolsonaro_recode))
+  # 68% de correlação.
+```
+
+# Decisão de compartilhar
+Agora vamos nos voltar para analisar nossa principal variável de interesse, a decisão de compartilhar ou não a notícia.
+
+```{r, message = FALSE}
+# decisao versus politico de identificação
+compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento)) %>%
+  group_by(estudo, politico, decisao_compartilhamento) %>%
+  summarise(total = n()) %>%
+  pivot_wider(names_from = decisao_compartilhamento, 
+              values_from = total,
+              values_fill = 0) %>%
+  clean_names() %>%
+  ungroup() %>%
+  group_by(estudo) %>%
+  mutate(total = nao_publicar_nenhuma_noticia + opcao_1 + opcao_2,
+           prop_op1 = round(opcao_1 /total, 2),
+         prop_op2 = round(opcao_2/total, 2),
+         nenhuma = round (nao_publicar_nenhuma_noticia/total, 2))
+```
+
+Como é possível observar na tabela acima, Lulistas claramente preferem a opções 2 em todos os estudos, embora, é claro, não tenhamos verificado se a diferença é estatisticamente significante.
+
+Vamos continuar explorando o banco, para ver se há possíveis moderadores ou variáveis de confusão potenciais. Primeiro vamos olhar para gênero e depois para idade.
+
+```{r, message = FALSE}
+# Gênero influencia decisão de compartilhar?
+# estudo 1
+
+compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=decisao_compartilhamento,  y = ..prop.., group = 1)) + geom_bar() +
+  ggtitle("Estudo 1") + scale_y_continuous(labels = scales::percent) + coord_flip() +
+  facet_grid(estudo ~ genero)
+```
+
+Embora haja variações entre estudos, tanto para homens quanto para mulheres, a opção 2 é a preferida nos três estudos.
+Portanto, gênero não parece ser uma variável de confusão relevante. Porém, pode ser uma variável moderadora imortante. Assim, vamos investigar se bolsonaristas e lulistas se comportam diferentemente, quando analisamos por gênero.
+
+```{r, message = FALSE}
+# Gênero influencia decisão de compartilhar?
+# estudo 1
+
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 1",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=decisao_compartilhamento,  y = ..prop.., group = 1)) + geom_bar() +
+  ggtitle("Estudo 1") + scale_y_continuous(labels = scales::percent) + coord_flip() +
+  facet_grid(politico ~ genero)
+
+# estudo 2
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 2",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=decisao_compartilhamento,  y = ..prop.., group = 1)) + geom_bar() +
+  ggtitle("Estudo 2") + scale_y_continuous(labels = scales::percent) + coord_flip() +
+  facet_grid(politico ~ genero)
+
+
+# estudo 3
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 3",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=decisao_compartilhamento,  y = ..prop.., group = 1)) + geom_bar() +
+  ggtitle("Estudo 3") + scale_y_continuous(labels = scales::percent) + coord_flip() +
+  facet_grid(politico ~ genero)
+```
+
+Gênero parece ser uma variável moderadora importante. No estudo 1, muda o comportamento de bolsonaristas completamente. Homens preferem a opção 1, enquanto para mulheres, esta é a opção menos escolhida. Para lulistas, a diferença é bem menos pronunciada.
+
+Já no estudo 2, há pouca diferença entre homens e mulheres no grupo de bolsonaristas. Já para lulistas, a opção 2 é a preferida para mulheres e homens, mas muito mais para homens. Os dados do estudo 3 é bem similar ao estudo 2 para lulistas, enquanto que para Bolsonaristas parece haver pouca diferença entre homens e mulheres, ainda que não seja igual ao estudo 2.
+
+Vamos agora analisar idade.
+
+```{r, message = FALSE}
+# idade e compartilhamento
+
+# estudo 1, 2 e 3
+compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(col=decisao_compartilhamento, x=idade)) + geom_density() +
+  facet_grid(rows= vars(estudo))
+```
+
+Como vemos, a idade é um preditor importante da decisão de compartilhar, com a opção 2 sendo preferível pelos mais jovens, mas não entre os mais velhos. Isso significa que se a amostra for diferente entre lulistas e bolsonaristas com relação a idade, pode ser uma variável de confusão que devemos controlar.
+
+```{r, message = FALSE}
+# estudo 1, 2 e 3 por político e idade
+compartilhamento_3_estudos %>%
+  filter(!is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(col=decisao_compartilhamento, x=idade)) + geom_density() +
+  facet_grid(politico ~ estudo)
+# opção 2 é bem maior entre mais jovens
+```
+Para mim parece difícil separar, apenas pela análise descritiva, os efeitos de idade e do bolsonarismo e lulismo. 
+Parece que ambas as variáveis têm efeitos, mas é difícil ir além disso.
+A análise de regbressão será mais útil nesse sentido. Antes disso, porém, vamos olhar os scores de narcisismo e nacionalismo.
+
+## scores 
+```{r, message = FALSE}
+# estudo 1
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 1",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 1") +
+  facet_wrap(vars(politico), nrow = 2)
+
+# estudo 2
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 2",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 2") +
+  facet_wrap(vars(politico), nrow = 2)
+
+# estudo 3
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 3",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 3") +
+  facet_wrap(vars(politico), nrow = 2)
+
+
+
+
+## scores e decisão
+
+# estudo 1
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 1",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 1") +
+  facet_wrap(vars(decisao_compartilhamento, politico), nrow = 3)
+
+# estudo 2
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 2",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 2") +
+  facet_wrap(vars(decisao_compartilhamento, politico), nrow = 3)
+
+# estudo 3
+compartilhamento_3_estudos %>%
+  filter(estudo == "estudo 3",
+         !is.na(decisao_compartilhamento),
+         genero != "outros") %>%
+  droplevels() %>%
+  ggplot(aes(x=score_narcissism, y=score_id_nac, color=politico)) + geom_point() +
+  ggtitle("Estudo 3") +
+  facet_wrap(vars(decisao_compartilhamento, politico), nrow = 3)
+```
+
+O próximo passo é utilizar análise de regressão para avançar na análise.
