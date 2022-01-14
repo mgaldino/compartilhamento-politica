@@ -28,3 +28,4 @@ vignettes/*.pdf
 .Renviron
 stan_model_pred.rds
 resultado.rds
+stan_model_pred_v2.rds
