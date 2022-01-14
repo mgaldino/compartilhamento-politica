@@ -14,11 +14,11 @@ rstan_options(auto_write = TRUE)
 
 # function to compute p-values based on z-scores (2-tailed z test)
 
-multi_p_value <- function(fit_object) {
-  z <- summary(fit_object)$coefficients/summary(fit_object)$standard.errors
-  p <- (1 - pnorm(abs(z), 0, 1)) * 2
-  p
-}
+# multi_p_value <- function(fit_object) {
+#   z <- summary(fit_object)$coefficients/summary(fit_object)$standard.errors
+#   p <- (1 - pnorm(abs(z), 0, 1)) * 2
+#   p
+# }
 
 compartilhamento_3_estudos <- readRDS("Transformados/compartilhamento_3_estudos.rds")
 
