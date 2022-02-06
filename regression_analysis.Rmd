@@ -282,18 +282,18 @@ print(p3)
 cat("\n")
 
 # loo
-print(paste("Comparação de modelos no estudo", j))
-
-print(lista_loo[[1]])
-cat("\n")
-
-print(lista_loo[[1]])
-
-print(lista_loo[[2]])
-cat("\n")
-
-print(lista_loo[[3]])
-cat("\n")
+# print(paste("Comparação de modelos no estudo", j))
+# 
+# print(lista_loo[[1]])
+# cat("\n")
+# 
+# print(lista_loo[[1]])
+# 
+# print(lista_loo[[2]])
+# cat("\n")
+# 
+# print(lista_loo[[3]])
+# cat("\n")
 
 comp <- round(loo_compare(lista_loo[[1]], lista_loo[[2]], lista_loo[[3]]), 3)
 print(kbl(comp))
