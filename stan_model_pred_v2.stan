@@ -1,7 +1,7 @@
  data {
- int<lower=2> K;
- int<lower=0> N;
- int<lower=1> D;
+ int<lower=3> K; // Number of alternatives (choices) in each scenario
+ int<lower=0> N; // Number of obs
+ int<lower=1> D; // Number of covariates or predictors
  int<lower=1, upper=K> y[N];
  matrix[N, D] x;
  int<lower=0> N_new;
