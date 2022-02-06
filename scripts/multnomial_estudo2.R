@@ -1,4 +1,4 @@
-# Modelo Bayesiano para estudo 2 e 3
+# Modelo Bayesiano para estudo 2
 
 library(nnet)
 library(rstan)
@@ -23,7 +23,7 @@ compartilhamento_3_estudos <- compartilhamento_3_estudos %>%
   mutate(score_id_nac = select(., 27:28) %>% apply(1, sum, na.rm=TRUE))
 
 # estudo 2
-compartilhamento1 <- compartilhamento_3_estudos %>%
+compartilhamento2 <- compartilhamento_3_estudos %>%
   filter(!is.na(decisao_compartilhamento)) %>%
   filter(Estudo == 2,
          genero != "outros") %>% #exclui outros, pois tem muito poucos casos
@@ -32,7 +32,7 @@ compartilhamento1 <- compartilhamento_3_estudos %>%
            if_else(as.character(politico_escolhido) == "Lula", nivel_identificacao_recode*-1, nivel_identificacao_recode)) # multiplica score dos lulitas por -1
 
 # transformado os bancos de tiblle para df
-dat <- as.data.frame(compartilhamento1)
+dat <- as.data.frame(compartilhamento2)
 
 
 #modelos a serem estimados
@@ -43,7 +43,7 @@ f2 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + libera
 
 # dados pro Stan para cada modelo
 
-# base estudo 1
+# base estudo 2
 M0 <- model.matrix(f0, dat)
 M1 <- model.matrix(f1, dat)
 M2 <- model.matrix(f2, dat)
