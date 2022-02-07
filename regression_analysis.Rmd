@@ -91,9 +91,11 @@ compartilhamento3 <- compartilhamento_3_estudos %>%
 
 #modelos a serem estimados
 
-f0 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode")
-f1 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + genero")
-f2 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + liberal_conservador + score_narcisism + ladder + genero")
+f0 <- as.formula("decisao_compartilhamento ~ 1")
+f1 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode")
+f2 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + genero")
+f3 <- as.formula("decisao_compartilhamento ~ nivel_identificacao_recode + genero + liberal_conservador + score_narcisism + score_id_nac + 
+                 ladder")
 
 # lista de dfs
 
@@ -105,7 +107,8 @@ lista_df <- list(as.data.frame(compartilhamento1), as.data.frame(compartilhament
 
 # número de iterações
 num_iter <- 2000
-n_loop <- 3
+n_loop <- length(lista_df)
+
 for ( j in 1:n_loop) {
   cat("\n")
   print (paste("Estudo", j))
@@ -116,31 +119,28 @@ for ( j in 1:n_loop) {
 M0 <- model.matrix(f0, dat)
 M1 <- model.matrix(f1, dat)
 M2 <- model.matrix(f2, dat)
+M3 <- model.matrix(f3, dat)
 
 # dados para y rep
-dat_pred_1 <- dat%>%
-  mutate(intercept = 1) %>%
-  dplyr::select(intercept, nivel_identificacao_recode)
+dat_pred_1 <- as.data.frame(M0)
 
-dat_pred_2 <- dat %>%
-  mutate(intercept = 1) %>%
-  dplyr::select(intercept, nivel_identificacao_recode, liberal_conservador)
+dat_pred_2 <- as.data.frame(M1)
 
-dat_pred_3 <- dat %>%
-  mutate(intercept = 1) %>%
-  dplyr::select(intercept, nivel_identificacao_recode, liberal_conservador, score_narcisism, ladder, genero)
+dat_pred_3 <- as.data.frame(M2)
 
+dat_pred_4 <- as.data.frame(M3)
 
-
-list_dat_pred <- list(dat_pred_1, dat_pred_2, dat_pred_3)
-lista <- list(M0, M1, M2)
+list_dat_pred <- list(dat_pred_1, dat_pred_2, dat_pred_3, dat_pred_4)
+lista <- list(M0, M1, M2, M3)
 lista_fits <- list()
 lista_results <- list()
 lista_loo <- list()
 lista_psis <- list()
 lista_dados_ppc <- list()
 
-for ( i in 1:3) {
+n_modelos <- length(list_dat_pred)
+
+for ( i in 1:n_modelos) {
   # cria dados
   datlist <- list(N=nrow(lista[[i]]),                     #nr of obs
                     K=length(unique(dat[,51])),     #possible outcomes
@@ -176,33 +176,55 @@ for ( i in 1:3) {
 rm(fit) # remove modelo, já que tá tudo na lista
 
 ## Resultados
+res <- as.matrix(lista_fits[[2]])
+res1 <- res[,1:4]
+res2 <- res1 > 0
+colSums(res2)/nrow(res2)
 
+res <- as.matrix(lista_fits[[3]])
+res1 <- res[,1:6]
+res2 <- res1 > 0
+colSums(res2)/nrow(res2)
+
+res <- as.matrix(lista_fits[[4]])
+res1 <- res[,1:14]
+res2 <- res1 > 0
+colSums(res2)/nrow(res2)
 
 fit_summary_1 <- summary(lista_fits[[1]])
 fit_summary_2 <- summary(lista_fits[[2]])
 fit_summary_3 <- summary(lista_fits[[3]])
-
+fit_summary_4 <- summary(lista_fits[[4]])
 # seleciona infos relevantes
-table_modelo1 <- fit_summary_1$summary[1:4,-c(2, 5,7,9,10)]
+table_modelo1 <- fit_summary_1$summary[1:2,-c(2, 5,7,9,10)]
 table_modelo1 <- round(table_modelo1, 3)
 
-table_modelo2 <- fit_summary_2$summary[1:6,-c(2, 5,7,9,10)]
+table_modelo2 <- fit_summary_2$summary[1:4,-c(2, 5,7,9,10)]
 table_modelo2 <- round(table_modelo2, 3)
 
-table_modelo3 <- fit_summary_3$summary[1:12,-c(2, 5,7,9,10)]
+table_modelo3 <- fit_summary_3$summary[1:6,-c(2, 5,7,9,10)]
 table_modelo3 <- round(table_modelo3, 3)
 
+table_modelo4 <- fit_summary_4$summary[1:14,-c(2, 5,7,9,10)]
+table_modelo4 <- round(table_modelo4, 3)
+
 # ajuste formatação
-rownames(table_modelo1) <- c("alpha1","alpha2","identificacao_1","identificacao_2")
+
+rownames(table_modelo1) <- c("intercepto_n_pub", "intecepto_opcao2")
 table_modelo1 <- as.data.frame(table_modelo1)
 
-rownames(table_modelo2) <- c("alpha1","alpha2","identificacao_1","identificacao_2", "liberal_conservador_1", "liberal_conservador_2")
+rownames(table_modelo2) <- c("intercepto_n_pub","identificacao_n_pub", "intecepto_opcao2","identificação_opcao2")
 table_modelo2 <- as.data.frame(table_modelo2)
 
+rownames(table_modelo3) <- c("intercepto_n_pub","identificacao_n_pub","genero_n_pub",
+                             "intercepto_opcao2","identificacao_opcao2","genero_opcao2")
+table_modelo3 <- as.data.frame(table_modelo3)
 
-rownames(table_modelo3) <- c("alpha1","alpha2","identificacao_1","identificacao_2", "liberal_conservador_1", "liberal_conservador_2",
-                             "score_narcisism_1", "score_narcisism_2", "ladder_1", "ladder_2", "genero_1", "genero_2")
-table_modelo2 <- as.data.frame(table_modelo2)
+
+rownames(table_modelo4) <- c("intercepto_n_pub","identificacao_n_pub","genero_n_pub","libcon_n_pub", 
+                             "narcisim_n_pub", "idnac_n_pub", "ladder_n_pub", "intercepto_opcao2","identificacao_opcao2",
+                             "genero_opcao2", "libcon_opcao2",  "narcisim_opcao2", "idnac_opcao2", "ladder_opcao2")
+table_modelo4 <- as.data.frame(table_modelo4)
 
 # formata e imprime a tabela
 
@@ -240,6 +262,18 @@ t3 <- table_modelo3 %>%
 print(t3)
 cat("\n")
 cat("\n")
+
+t4 <- table_modelo4 %>%
+  kbl(caption = paste("Resultados da regressão - estudo", 1, "modelo 3")) %>%
+  kable_paper("hover", full_width = F, position = "left", font_size = 20) %>%
+        column_spec(2, color = "white",
+              background = spec_color(table_modelo4[,1], begin = .4, end = .8, direction=1)) %>%
+    column_spec(4, color = "white",
+              background = spec_color(table_modelo4[,3], begin = .4, end = .8, direction=1))
+
+print(t4)
+cat("\n")
+cat("\n")
 # salva as tabelas em uma lista
 # aux <- length(lista_tabela_modelo)
 # print(j)
@@ -260,8 +294,12 @@ y_rep2 <- as.matrix(lista_fits[[2]], pars = "y_new")
 # modelo 3
 y_rep3 <- as.matrix(lista_fits[[3]], pars = "y_new")
 
+# modelo 3
+y_rep4 <- as.matrix(lista_fits[[4]], pars = "y_new")
+
 # salvando em lista
 print(paste("Posterior predictive check para modelos do estudo", j))
+cat("\n")
 # PPC 1
 print("Comparacão entre y observado e replicações do y a partir da posteriori, modelo 1")
 p1 <- ppc_bars(lista_dados_ppc[[1]]$y, y_rep1[1:nrow(lista_results[[1]]), ], prob = .95, freq = F)
@@ -281,6 +319,11 @@ p3 <- ppc_bars(lista_dados_ppc[[3]]$y, y_rep3[1:nrow(lista_results[[3]]), ], pro
 print(p3)
 cat("\n")
 
+# ppc 4
+print("Comparacão entre y observado e replicações do y a partir da posteriori, modelo 4")
+p3 <- ppc_bars(lista_dados_ppc[[4]]$y, y_rep4[1:nrow(lista_results[[4]]), ], prob = .95, freq = F)
+print(p3)
+cat("\n")
 # loo
 # print(paste("Comparação de modelos no estudo", j))
 # 
@@ -295,15 +338,15 @@ cat("\n")
 # print(lista_loo[[3]])
 # cat("\n")
 
-comp <- round(loo_compare(lista_loo[[1]], lista_loo[[2]], lista_loo[[3]]), 3)
-print(kbl(comp))
+print(paste("Loo para estudo", j))
+comp <- round(loo_compare(lista_loo[[1]], lista_loo[[2]], lista_loo[[3]], lista_loo[[4]]), 3)
 
 cat("\n")
 
 
 loocomp <- comp %>%
   kbl(caption = paste("Loo -", "Comparações de modelos")) %>%
-  kable_paper("hover", full_width = F, position = "left", font_size = 20)
+  kable_paper("hover", full_width = T, position = "left", font_size = 20)
 
 print(loocomp)
               
