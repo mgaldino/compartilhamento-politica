@@ -1,0 +1,2710 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Manoel Galdino" />
+
+<meta name="date" content="2022-03-02" />
+
+<title>Compartilhamento Política - analise de regressão multinomial</title>
+
+<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/flatly.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/default.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+<link rel="stylesheet" href="style.css" type="text/css" />
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Compartilhamento Politica</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="analise.html">Analise exploratoria</a>
+</li>
+<li>
+  <a href="about.html">About Me</a>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Compartilhamento Política - analise de regressão multinomial</h1>
+<h4 class="author">Manoel Galdino</h4>
+<h4 class="date">03/02/2022</h4>
+
+</div>
+
+
+<pre class="r"><code>library(rstan)
+library(ggplot2)
+library(bayesplot)
+library(tidyverse)
+library(tidyr)
+library(ggplot2)
+library(tidyverse)
+library(loo)
+library(posterior)
+library(kableExtra)</code></pre>
+<pre class="r"><code>options(mc.cores = parallel::detectCores())</code></pre>
+<div id="multinomial-logit-model" class="section level3">
+<h3>Multinomial logit model</h3>
+<p>In the experiment, people had three choices after being shown a text: attacking the exogroup, defend the endogroup or do nothing (<span class="math inline">\(k\)</span> choices, in our case, <span class="math inline">\(k\)</span> = 3). Here we will set choice 1 (attacking exogroup) as the reference category #(checar que 1 é atacar o exogrupo). The model fitted is a multinomial Bayesian regression.</p>
+</div>
+<div id="multinomial-logit-model-1" class="section level3">
+<h3>Multinomial logit model</h3>
+<p>The data is comprised of three independent studies.</p>
+<pre><code>## here() starts at /home/mgaldino/Documentos/Pessoal/Neuroscience/compartilhamento-politica</code></pre>
+<p>[1] 3</p>
+<p>[1] “Estudo 1”</p>
+[1] 1
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 1 modelo 1
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(68, 1, 84, 1) !important;">
+-0.117
+</td>
+<td style="text-align:right;">
+0.144
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.392
+</td>
+<td style="text-align:right;">
+-0.119
+</td>
+<td style="text-align:right;">
+0.172
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intecepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+0.496
+</td>
+<td style="text-align:right;">
+0.128
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.253
+</td>
+<td style="text-align:right;">
+0.495
+</td>
+<td style="text-align:right;">
+0.757
+</td>
+</tr>
+</tbody>
+</table>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 1 modelo 2
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.160
+</td>
+<td style="text-align:right;">
+0.161
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.476
+</td>
+<td style="text-align:right;">
+-0.157
+</td>
+<td style="text-align:right;">
+0.154
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(34, 167, 133, 1) !important;">
+-0.002
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+-0.006
+</td>
+<td style="text-align:right;">
+-0.001
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intecepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.164
+</td>
+<td style="text-align:right;">
+0.162
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(56, 185, 119, 1) !important;">
+-0.155
+</td>
+<td style="text-align:right;">
+0.163
+</td>
+<td style="text-align:right;">
+0.479
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificação_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(33, 165, 133, 1) !important;">
+-0.009
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(118, 208, 84, 1) !important;">
+-0.014
+</td>
+<td style="text-align:right;">
+-0.009
+</td>
+<td style="text-align:right;">
+-0.004
+</td>
+</tr>
+</tbody>
+</table>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 1 modelo 3
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.263
+</td>
+<td style="text-align:right;">
+0.203
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.655
+</td>
+<td style="text-align:right;">
+-0.266
+</td>
+<td style="text-align:right;">
+0.127
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(34, 168, 132, 1) !important;">
+-0.002
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+-0.007
+</td>
+<td style="text-align:right;">
+-0.002
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.255
+</td>
+<td style="text-align:right;">
+0.301
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(36, 170, 131, 1) !important;">
+-0.319
+</td>
+<td style="text-align:right;">
+0.257
+</td>
+<td style="text-align:right;">
+0.839
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intercepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(48, 180, 124, 1) !important;">
+0.065
+</td>
+<td style="text-align:right;">
+0.194
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(37, 172, 130, 1) !important;">
+-0.307
+</td>
+<td style="text-align:right;">
+0.066
+</td>
+<td style="text-align:right;">
+0.444
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(34, 167, 133, 1) !important;">
+-0.009
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(118, 209, 83, 1) !important;">
+-0.014
+</td>
+<td style="text-align:right;">
+-0.009
+</td>
+<td style="text-align:right;">
+-0.004
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(118, 209, 83, 1) !important;">
+0.249
+</td>
+<td style="text-align:right;">
+0.269
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(41, 175, 127, 1) !important;">
+-0.280
+</td>
+<td style="text-align:right;">
+0.256
+</td>
+<td style="text-align:right;">
+0.776
+</td>
+</tr>
+</tbody>
+</table>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 1 modelo 4
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.771
+</td>
+<td style="text-align:right;">
+0.830
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(37, 131, 142, 1) !important;">
+-0.853
+</td>
+<td style="text-align:right;">
+0.782
+</td>
+<td style="text-align:right;">
+2.409
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(38, 130, 142, 1) !important;">
+0.000
+</td>
+<td style="text-align:right;">
+0.004
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(118, 209, 83, 1) !important;">
+-0.007
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.008
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(31, 158, 137, 1) !important;">
+0.255
+</td>
+<td style="text-align:right;">
+0.303
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(50, 182, 122, 1) !important;">
+-0.336
+</td>
+<td style="text-align:right;">
+0.255
+</td>
+<td style="text-align:right;">
+0.853
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+libcon_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(41, 122, 142, 1) !important;">
+-0.061
+</td>
+<td style="text-align:right;">
+0.077
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(72, 193, 110, 1) !important;">
+-0.213
+</td>
+<td style="text-align:right;">
+-0.058
+</td>
+<td style="text-align:right;">
+0.090
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+narcisim_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(37, 133, 142, 1) !important;">
+0.036
+</td>
+<td style="text-align:right;">
+0.025
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(118, 208, 84, 1) !important;">
+-0.013
+</td>
+<td style="text-align:right;">
+0.036
+</td>
+<td style="text-align:right;">
+0.083
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+idnac_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.079
+</td>
+<td style="text-align:right;">
+0.035
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(87, 198, 102, 1) !important;">
+-0.146
+</td>
+<td style="text-align:right;">
+-0.079
+</td>
+<td style="text-align:right;">
+-0.014
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ladder_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(39, 128, 142, 1) !important;">
+-0.013
+</td>
+<td style="text-align:right;">
+0.094
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(76, 194, 108, 1) !important;">
+-0.198
+</td>
+<td style="text-align:right;">
+-0.012
+</td>
+<td style="text-align:right;">
+0.170
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intercepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(46, 180, 124, 1) !important;">
+0.451
+</td>
+<td style="text-align:right;">
+0.737
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.961
+</td>
+<td style="text-align:right;">
+0.460
+</td>
+<td style="text-align:right;">
+1.909
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(38, 129, 142, 1) !important;">
+-0.007
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(118, 208, 84, 1) !important;">
+-0.014
+</td>
+<td style="text-align:right;">
+-0.007
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(31, 158, 137, 1) !important;">
+0.250
+</td>
+<td style="text-align:right;">
+0.271
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(58, 186, 118, 1) !important;">
+-0.287
+</td>
+<td style="text-align:right;">
+0.256
+</td>
+<td style="text-align:right;">
+0.772
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+libcon_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(41, 121, 142, 1) !important;">
+-0.073
+</td>
+<td style="text-align:right;">
+0.069
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(73, 193, 109, 1) !important;">
+-0.209
+</td>
+<td style="text-align:right;">
+-0.073
+</td>
+<td style="text-align:right;">
+0.058
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+narcisim_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(36, 134, 142, 1) !important;">
+0.045
+</td>
+<td style="text-align:right;">
+0.022
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.003
+</td>
+<td style="text-align:right;">
+0.045
+</td>
+<td style="text-align:right;">
+0.088
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+idnac_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(41, 121, 142, 1) !important;">
+-0.069
+</td>
+<td style="text-align:right;">
+0.031
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(90, 200, 100, 1) !important;">
+-0.129
+</td>
+<td style="text-align:right;">
+-0.069
+</td>
+<td style="text-align:right;">
+-0.007
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ladder_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(36, 135, 142, 1) !important;">
+0.056
+</td>
+<td style="text-align:right;">
+0.082
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(97, 202, 96, 1) !important;">
+-0.100
+</td>
+<td style="text-align:right;">
+0.055
+</td>
+<td style="text-align:right;">
+0.214
+</td>
+</tr>
+</tbody>
+</table>
+<p>[1] “Posterior predictive check para modelos do estudo 1”</p>
+<p>[1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 1” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-1.png" width="672" style="display: block; margin: auto;" /> [1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 2” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-2.png" width="672" style="display: block; margin: auto;" /> [1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 3” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-3.png" width="672" style="display: block; margin: auto;" /> [1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 4” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-4.png" width="672" style="display: block; margin: auto;" /> [1] “Loo para estudo 1”</p>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; ">
+<caption style="font-size: initial !important;">
+Loo - Comparações de modelos
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+elpd_diff
+</th>
+<th style="text-align:right;">
+se_diff
+</th>
+<th style="text-align:right;">
+elpd_loo
+</th>
+<th style="text-align:right;">
+se_elpd_loo
+</th>
+<th style="text-align:right;">
+p_loo
+</th>
+<th style="text-align:right;">
+se_p_loo
+</th>
+<th style="text-align:right;">
+looic
+</th>
+<th style="text-align:right;">
+se_looic
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+model2
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+-366.421
+</td>
+<td style="text-align:right;">
+6.723
+</td>
+<td style="text-align:right;">
+4.069
+</td>
+<td style="text-align:right;">
+0.200
+</td>
+<td style="text-align:right;">
+732.843
+</td>
+<td style="text-align:right;">
+13.446
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+model3
+</td>
+<td style="text-align:right;">
+-1.638
+</td>
+<td style="text-align:right;">
+1.048
+</td>
+<td style="text-align:right;">
+-368.059
+</td>
+<td style="text-align:right;">
+6.864
+</td>
+<td style="text-align:right;">
+6.191
+</td>
+<td style="text-align:right;">
+0.243
+</td>
+<td style="text-align:right;">
+736.119
+</td>
+<td style="text-align:right;">
+13.727
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+model4
+</td>
+<td style="text-align:right;">
+-5.508
+</td>
+<td style="text-align:right;">
+3.437
+</td>
+<td style="text-align:right;">
+-371.929
+</td>
+<td style="text-align:right;">
+7.722
+</td>
+<td style="text-align:right;">
+15.126
+</td>
+<td style="text-align:right;">
+0.657
+</td>
+<td style="text-align:right;">
+743.858
+</td>
+<td style="text-align:right;">
+15.444
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+model1
+</td>
+<td style="text-align:right;">
+-5.864
+</td>
+<td style="text-align:right;">
+4.131
+</td>
+<td style="text-align:right;">
+-372.286
+</td>
+<td style="text-align:right;">
+5.225
+</td>
+<td style="text-align:right;">
+1.979
+</td>
+<td style="text-align:right;">
+0.042
+</td>
+<td style="text-align:right;">
+744.571
+</td>
+<td style="text-align:right;">
+10.451
+</td>
+</tr>
+</tbody>
+</table>
+<p>[1] “Estudo 2”</p>
+[1] 2
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 2 modelo 1
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(68, 1, 84, 1) !important;">
+-0.006
+</td>
+<td style="text-align:right;">
+0.141
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.280
+</td>
+<td style="text-align:right;">
+-0.006
+</td>
+<td style="text-align:right;">
+0.273
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intecepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+0.524
+</td>
+<td style="text-align:right;">
+0.125
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.272
+</td>
+<td style="text-align:right;">
+0.525
+</td>
+<td style="text-align:right;">
+0.766
+</td>
+</tr>
+</tbody>
+</table>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 2 modelo 2
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(34, 140, 141, 1) !important;">
+0.109
+</td>
+<td style="text-align:right;">
+0.153
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.194
+</td>
+<td style="text-align:right;">
+0.109
+</td>
+<td style="text-align:right;">
+0.410
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(41, 121, 142, 1) !important;">
+0.004
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(31, 161, 135, 1) !important;">
+0.000
+</td>
+<td style="text-align:right;">
+0.005
+</td>
+<td style="text-align:right;">
+0.009
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intecepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.536
+</td>
+<td style="text-align:right;">
+0.144
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.256
+</td>
+<td style="text-align:right;">
+0.535
+</td>
+<td style="text-align:right;">
+0.817
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificação_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+0.000
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(31, 161, 136, 1) !important;">
+-0.004
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+<td style="text-align:right;">
+0.005
+</td>
+</tr>
+</tbody>
+</table>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 2 modelo 3
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.260
+</td>
+<td style="text-align:right;">
+0.209
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.672
+</td>
+<td style="text-align:right;">
+-0.262
+</td>
+<td style="text-align:right;">
+0.146
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(33, 143, 141, 1) !important;">
+0.005
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(58, 186, 118, 1) !important;">
+0.001
+</td>
+<td style="text-align:right;">
+0.005
+</td>
+<td style="text-align:right;">
+0.010
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.885
+</td>
+<td style="text-align:right;">
+0.299
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.300
+</td>
+<td style="text-align:right;">
+0.881
+</td>
+<td style="text-align:right;">
+1.479
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intercepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(44, 177, 126, 1) !important;">
+0.426
+</td>
+<td style="text-align:right;">
+0.180
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(72, 193, 110, 1) !important;">
+0.081
+</td>
+<td style="text-align:right;">
+0.425
+</td>
+<td style="text-align:right;">
+0.770
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(33, 142, 141, 1) !important;">
+0.001
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(57, 185, 119, 1) !important;">
+-0.003
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+<td style="text-align:right;">
+0.005
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(35, 169, 131, 1) !important;">
+0.329
+</td>
+<td style="text-align:right;">
+0.265
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(35, 169, 131, 1) !important;">
+-0.176
+</td>
+<td style="text-align:right;">
+0.329
+</td>
+<td style="text-align:right;">
+0.865
+</td>
+</tr>
+</tbody>
+</table>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 2 modelo 4
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(33, 145, 140, 1) !important;">
+0.179
+</td>
+<td style="text-align:right;">
+0.829
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-1.462
+</td>
+<td style="text-align:right;">
+0.179
+</td>
+<td style="text-align:right;">
+1.782
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(36, 134, 142, 1) !important;">
+0.008
+</td>
+<td style="text-align:right;">
+0.004
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(92, 200, 99, 1) !important;">
+0.001
+</td>
+<td style="text-align:right;">
+0.008
+</td>
+<td style="text-align:right;">
+0.016
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(55, 184, 120, 1) !important;">
+0.821
+</td>
+<td style="text-align:right;">
+0.307
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.217
+</td>
+<td style="text-align:right;">
+0.818
+</td>
+<td style="text-align:right;">
+1.413
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+libcon_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(39, 128, 142, 1) !important;">
+-0.085
+</td>
+<td style="text-align:right;">
+0.082
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(62, 188, 115, 1) !important;">
+-0.251
+</td>
+<td style="text-align:right;">
+-0.084
+</td>
+<td style="text-align:right;">
+0.080
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+narcisim_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(37, 133, 142, 1) !important;">
+-0.001
+</td>
+<td style="text-align:right;">
+0.026
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(85, 198, 104, 1) !important;">
+-0.052
+</td>
+<td style="text-align:right;">
+-0.001
+</td>
+<td style="text-align:right;">
+0.051
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+idnac_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(35, 136, 142, 1) !important;">
+0.038
+</td>
+<td style="text-align:right;">
+0.036
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(88, 199, 101, 1) !important;">
+-0.032
+</td>
+<td style="text-align:right;">
+0.039
+</td>
+<td style="text-align:right;">
+0.109
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ladder_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(39, 128, 142, 1) !important;">
+-0.095
+</td>
+<td style="text-align:right;">
+0.089
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(60, 187, 117, 1) !important;">
+-0.270
+</td>
+<td style="text-align:right;">
+-0.093
+</td>
+<td style="text-align:right;">
+0.078
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intercepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+1.318
+</td>
+<td style="text-align:right;">
+0.730
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(79, 195, 107, 1) !important;">
+-0.105
+</td>
+<td style="text-align:right;">
+1.314
+</td>
+<td style="text-align:right;">
+2.772
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(37, 133, 142, 1) !important;">
+0.002
+</td>
+<td style="text-align:right;">
+0.004
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(91, 200, 100, 1) !important;">
+-0.006
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+<td style="text-align:right;">
+0.008
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(33, 145, 140, 1) !important;">
+0.174
+</td>
+<td style="text-align:right;">
+0.276
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(52, 182, 121, 1) !important;">
+-0.361
+</td>
+<td style="text-align:right;">
+0.170
+</td>
+<td style="text-align:right;">
+0.709
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+libcon_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(37, 131, 142, 1) !important;">
+-0.035
+</td>
+<td style="text-align:right;">
+0.072
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(71, 192, 111, 1) !important;">
+-0.174
+</td>
+<td style="text-align:right;">
+-0.035
+</td>
+<td style="text-align:right;">
+0.113
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+narcisim_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(37, 133, 142, 1) !important;">
+0.005
+</td>
+<td style="text-align:right;">
+0.023
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(87, 198, 102, 1) !important;">
+-0.041
+</td>
+<td style="text-align:right;">
+0.005
+</td>
+<td style="text-align:right;">
+0.051
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+idnac_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(35, 136, 142, 1) !important;">
+0.043
+</td>
+<td style="text-align:right;">
+0.031
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(89, 200, 100, 1) !important;">
+-0.017
+</td>
+<td style="text-align:right;">
+0.043
+</td>
+<td style="text-align:right;">
+0.106
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ladder_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.212
+</td>
+<td style="text-align:right;">
+0.081
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(50, 182, 122, 1) !important;">
+-0.374
+</td>
+<td style="text-align:right;">
+-0.211
+</td>
+<td style="text-align:right;">
+-0.060
+</td>
+</tr>
+</tbody>
+</table>
+<p>[1] “Posterior predictive check para modelos do estudo 2”</p>
+<p>[1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 1” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-5.png" width="672" style="display: block; margin: auto;" /> [1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 2” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-6.png" width="672" style="display: block; margin: auto;" /> [1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 3” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-7.png" width="672" style="display: block; margin: auto;" /> [1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 4” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-8.png" width="672" style="display: block; margin: auto;" /> [1] “Loo para estudo 2”</p>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; ">
+<caption style="font-size: initial !important;">
+Loo - Comparações de modelos
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+elpd_diff
+</th>
+<th style="text-align:right;">
+se_diff
+</th>
+<th style="text-align:right;">
+elpd_loo
+</th>
+<th style="text-align:right;">
+se_elpd_loo
+</th>
+<th style="text-align:right;">
+p_loo
+</th>
+<th style="text-align:right;">
+se_p_loo
+</th>
+<th style="text-align:right;">
+looic
+</th>
+<th style="text-align:right;">
+se_looic
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+model3
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+-389.838
+</td>
+<td style="text-align:right;">
+6.062
+</td>
+<td style="text-align:right;">
+6.063
+</td>
+<td style="text-align:right;">
+0.207
+</td>
+<td style="text-align:right;">
+779.676
+</td>
+<td style="text-align:right;">
+12.125
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+model2
+</td>
+<td style="text-align:right;">
+-2.540
+</td>
+<td style="text-align:right;">
+3.086
+</td>
+<td style="text-align:right;">
+-392.378
+</td>
+<td style="text-align:right;">
+5.449
+</td>
+<td style="text-align:right;">
+3.923
+</td>
+<td style="text-align:right;">
+0.154
+</td>
+<td style="text-align:right;">
+784.756
+</td>
+<td style="text-align:right;">
+10.898
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+model4
+</td>
+<td style="text-align:right;">
+-2.657
+</td>
+<td style="text-align:right;">
+3.503
+</td>
+<td style="text-align:right;">
+-392.495
+</td>
+<td style="text-align:right;">
+7.130
+</td>
+<td style="text-align:right;">
+14.261
+</td>
+<td style="text-align:right;">
+0.516
+</td>
+<td style="text-align:right;">
+784.990
+</td>
+<td style="text-align:right;">
+14.260
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+model1
+</td>
+<td style="text-align:right;">
+-3.154
+</td>
+<td style="text-align:right;">
+3.748
+</td>
+<td style="text-align:right;">
+-392.992
+</td>
+<td style="text-align:right;">
+5.058
+</td>
+<td style="text-align:right;">
+1.983
+</td>
+<td style="text-align:right;">
+0.039
+</td>
+<td style="text-align:right;">
+785.983
+</td>
+<td style="text-align:right;">
+10.115
+</td>
+</tr>
+</tbody>
+</table>
+<p>[1] “Estudo 3”</p>
+[1] 3
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 3 modelo 1
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(68, 1, 84, 1) !important;">
+-0.116
+</td>
+<td style="text-align:right;">
+0.198
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.500
+</td>
+<td style="text-align:right;">
+-0.115
+</td>
+<td style="text-align:right;">
+0.276
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intecepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+0.355
+</td>
+<td style="text-align:right;">
+0.178
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.012
+</td>
+<td style="text-align:right;">
+0.353
+</td>
+<td style="text-align:right;">
+0.704
+</td>
+</tr>
+</tbody>
+</table>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 3 modelo 2
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.125
+</td>
+<td style="text-align:right;">
+0.200
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.517
+</td>
+<td style="text-align:right;">
+-0.126
+</td>
+<td style="text-align:right;">
+0.266
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(32, 146, 140, 1) !important;">
+0.003
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+-0.003
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;">
+0.009
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intecepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.356
+</td>
+<td style="text-align:right;">
+0.179
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+-0.002
+</td>
+<td style="text-align:right;">
+0.358
+</td>
+<td style="text-align:right;">
+0.712
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificação_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(32, 146, 140, 1) !important;">
+0.001
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(121, 209, 82, 1) !important;">
+-0.005
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+<td style="text-align:right;">
+0.006
+</td>
+</tr>
+</tbody>
+</table>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 3 modelo 3
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.253
+</td>
+<td style="text-align:right;">
+0.282
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.827
+</td>
+<td style="text-align:right;">
+-0.248
+</td>
+<td style="text-align:right;">
+0.301
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(33, 166, 133, 1) !important;">
+0.003
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+-0.003
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;">
+0.009
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(118, 208, 84, 1) !important;">
+0.273
+</td>
+<td style="text-align:right;">
+0.404
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(30, 156, 137, 1) !important;">
+-0.516
+</td>
+<td style="text-align:right;">
+0.266
+</td>
+<td style="text-align:right;">
+1.077
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intercepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.281
+</td>
+<td style="text-align:right;">
+0.249
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(68, 191, 112, 1) !important;">
+-0.208
+</td>
+<td style="text-align:right;">
+0.281
+</td>
+<td style="text-align:right;">
+0.782
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(33, 165, 133, 1) !important;">
+0.001
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(121, 209, 82, 1) !important;">
+-0.005
+</td>
+<td style="text-align:right;">
+0.001
+</td>
+<td style="text-align:right;">
+0.006
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(75, 193, 109, 1) !important;">
+0.167
+</td>
+<td style="text-align:right;">
+0.368
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(31, 153, 138, 1) !important;">
+-0.542
+</td>
+<td style="text-align:right;">
+0.166
+</td>
+<td style="text-align:right;">
+0.875
+</td>
+</tr>
+</tbody>
+</table>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; width: auto !important; ">
+<caption style="font-size: initial !important;">
+Resultados da regressão - estudo 3 modelo 4
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+mean
+</th>
+<th style="text-align:right;">
+sd
+</th>
+<th style="text-align:right;">
+2.5%
+</th>
+<th style="text-align:right;">
+50%
+</th>
+<th style="text-align:right;">
+97.5%
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+intercepto_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+0.913
+</td>
+<td style="text-align:right;">
+1.251
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(40, 125, 142, 1) !important;">
+-1.442
+</td>
+<td style="text-align:right;">
+0.879
+</td>
+<td style="text-align:right;">
+3.493
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(38, 129, 142, 1) !important;">
+0.004
+</td>
+<td style="text-align:right;">
+0.005
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+-0.006
+</td>
+<td style="text-align:right;">
+0.004
+</td>
+<td style="text-align:right;">
+0.014
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(31, 153, 138, 1) !important;">
+0.254
+</td>
+<td style="text-align:right;">
+0.439
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(45, 178, 125, 1) !important;">
+-0.592
+</td>
+<td style="text-align:right;">
+0.256
+</td>
+<td style="text-align:right;">
+1.099
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+libcon_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(35, 136, 142, 1) !important;">
+0.078
+</td>
+<td style="text-align:right;">
+0.119
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(98, 203, 95, 1) !important;">
+-0.161
+</td>
+<td style="text-align:right;">
+0.081
+</td>
+<td style="text-align:right;">
+0.304
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+narcisim_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(39, 126, 142, 1) !important;">
+-0.028
+</td>
+<td style="text-align:right;">
+0.034
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(108, 205, 90, 1) !important;">
+-0.094
+</td>
+<td style="text-align:right;">
+-0.028
+</td>
+<td style="text-align:right;">
+0.037
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+idnac_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-0.088
+</td>
+<td style="text-align:right;">
+0.051
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(92, 200, 99, 1) !important;">
+-0.195
+</td>
+<td style="text-align:right;">
+-0.087
+</td>
+<td style="text-align:right;">
+0.013
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ladder_n_pub
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(37, 132, 142, 1) !important;">
+0.039
+</td>
+<td style="text-align:right;">
+0.125
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(90, 200, 100, 1) !important;">
+-0.213
+</td>
+<td style="text-align:right;">
+0.041
+</td>
+<td style="text-align:right;">
+0.285
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+intercepto_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(78, 195, 107, 1) !important;">
+0.716
+</td>
+<td style="text-align:right;">
+1.142
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(42, 120, 142, 1) !important;">
+-1.520
+</td>
+<td style="text-align:right;">
+0.728
+</td>
+<td style="text-align:right;">
+2.929
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+identificacao_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(38, 129, 142, 1) !important;">
+0.003
+</td>
+<td style="text-align:right;">
+0.004
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(122, 209, 81, 1) !important;">
+-0.006
+</td>
+<td style="text-align:right;">
+0.003
+</td>
+<td style="text-align:right;">
+0.011
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+genero_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(31, 149, 139, 1) !important;">
+0.216
+</td>
+<td style="text-align:right;">
+0.388
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(50, 182, 122, 1) !important;">
+-0.545
+</td>
+<td style="text-align:right;">
+0.203
+</td>
+<td style="text-align:right;">
+0.996
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+libcon_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(39, 126, 142, 1) !important;">
+-0.031
+</td>
+<td style="text-align:right;">
+0.101
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(88, 199, 101, 1) !important;">
+-0.226
+</td>
+<td style="text-align:right;">
+-0.029
+</td>
+<td style="text-align:right;">
+0.165
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+narcisim_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(38, 130, 142, 1) !important;">
+0.015
+</td>
+<td style="text-align:right;">
+0.028
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(116, 208, 85, 1) !important;">
+-0.039
+</td>
+<td style="text-align:right;">
+0.014
+</td>
+<td style="text-align:right;">
+0.070
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+idnac_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(41, 123, 142, 1) !important;">
+-0.058
+</td>
+<td style="text-align:right;">
+0.046
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(100, 203, 95, 1) !important;">
+-0.147
+</td>
+<td style="text-align:right;">
+-0.057
+</td>
+<td style="text-align:right;">
+0.035
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+ladder_opcao2
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(36, 134, 142, 1) !important;">
+0.058
+</td>
+<td style="text-align:right;">
+0.115
+</td>
+<td style="text-align:right;color: white !important;background-color: rgba(97, 202, 96, 1) !important;">
+-0.167
+</td>
+<td style="text-align:right;">
+0.057
+</td>
+<td style="text-align:right;">
+0.287
+</td>
+</tr>
+</tbody>
+</table>
+<p>[1] “Posterior predictive check para modelos do estudo 3”</p>
+<p>[1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 1” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-9.png" width="672" style="display: block; margin: auto;" /> [1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 2” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-10.png" width="672" style="display: block; margin: auto;" /> [1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 3” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-11.png" width="672" style="display: block; margin: auto;" /> [1] “Comparacão entre y observado e replicações do y a partir da posteriori, modelo 4” <img src="regression_analysis_files/figure-html/unnamed-chunk-1-12.png" width="672" style="display: block; margin: auto;" /> [1] “Loo para estudo 3”</p>
+<table class=" lightable-paper lightable-hover" style="font-size: 20px; font-family: &quot;Arial Narrow&quot;, arial, helvetica, sans-serif; ">
+<caption style="font-size: initial !important;">
+Loo - Comparações de modelos
+</caption>
+<thead>
+<tr>
+<th style="text-align:left;">
+</th>
+<th style="text-align:right;">
+elpd_diff
+</th>
+<th style="text-align:right;">
+se_diff
+</th>
+<th style="text-align:right;">
+elpd_loo
+</th>
+<th style="text-align:right;">
+se_elpd_loo
+</th>
+<th style="text-align:right;">
+p_loo
+</th>
+<th style="text-align:right;">
+se_p_loo
+</th>
+<th style="text-align:right;">
+looic
+</th>
+<th style="text-align:right;">
+se_looic
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+model1
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+-190.609
+</td>
+<td style="text-align:right;">
+2.777
+</td>
+<td style="text-align:right;">
+1.965
+</td>
+<td style="text-align:right;">
+0.045
+</td>
+<td style="text-align:right;">
+381.218
+</td>
+<td style="text-align:right;">
+5.554
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+model2
+</td>
+<td style="text-align:right;">
+-1.415
+</td>
+<td style="text-align:right;">
+1.054
+</td>
+<td style="text-align:right;">
+-192.024
+</td>
+<td style="text-align:right;">
+2.968
+</td>
+<td style="text-align:right;">
+3.961
+</td>
+<td style="text-align:right;">
+0.140
+</td>
+<td style="text-align:right;">
+384.047
+</td>
+<td style="text-align:right;">
+5.936
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+model3
+</td>
+<td style="text-align:right;">
+-3.428
+</td>
+<td style="text-align:right;">
+1.285
+</td>
+<td style="text-align:right;">
+-194.037
+</td>
+<td style="text-align:right;">
+3.064
+</td>
+<td style="text-align:right;">
+6.239
+</td>
+<td style="text-align:right;">
+0.194
+</td>
+<td style="text-align:right;">
+388.073
+</td>
+<td style="text-align:right;">
+6.128
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+model4
+</td>
+<td style="text-align:right;">
+-9.154
+</td>
+<td style="text-align:right;">
+3.016
+</td>
+<td style="text-align:right;">
+-199.763
+</td>
+<td style="text-align:right;">
+4.119
+</td>
+<td style="text-align:right;">
+15.044
+</td>
+<td style="text-align:right;">
+0.740
+</td>
+<td style="text-align:right;">
+399.526
+</td>
+<td style="text-align:right;">
+8.237
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+
+
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
