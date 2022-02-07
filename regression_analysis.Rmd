@@ -108,11 +108,14 @@ lista_df <- list(as.data.frame(compartilhamento1), as.data.frame(compartilhament
 # número de iterações
 num_iter <- 2000
 n_loop <- length(lista_df)
-
+print(n_loop)
+  cat("\n")
+  
 for ( j in 1:n_loop) {
   cat("\n")
   print (paste("Estudo", j))
   cat("\n")
+  print(j)
 
   dat <- as.data.frame(lista_df[[j]])
   # base estudo 2
@@ -229,7 +232,7 @@ table_modelo4 <- as.data.frame(table_modelo4)
 # formata e imprime a tabela
 
 t1 <- table_modelo1 %>%
-  kbl(caption = paste("Resultados da regressão - estudo", 1, "modelo 1")) %>%
+  kbl(caption = paste("Resultados da regressão - estudo", j, "modelo 1")) %>%
   kable_paper("hover", full_width = F, position = "left", font_size = 20) %>%
         column_spec(2, color = "white",
               background = spec_color(table_modelo1[,1], begin = 0, end = .4, direction=1)) %>%
@@ -240,7 +243,7 @@ cat("\n")
 cat("\n")
 
 t2 <- table_modelo2 %>%
-  kbl(caption = paste("Resultados da regressão - estudo", 1, "modelo 2")) %>%
+  kbl(caption = paste("Resultados da regressão - estudo", j, "modelo 2")) %>%
   kable_paper("hover", full_width = F, position = "left", font_size = 20) %>%
       column_spec(2, color = "white",
               background = spec_color(table_modelo2[,1], begin = .4, end = .8, direction=1)) %>%
@@ -252,7 +255,7 @@ cat("\n")
 cat("\n")
 
 t3 <- table_modelo3 %>%
-  kbl(caption = paste("Resultados da regressão - estudo", 1, "modelo 3")) %>%
+  kbl(caption = paste("Resultados da regressão - estudo", j, "modelo 3")) %>%
   kable_paper("hover", full_width = F, position = "left", font_size = 20) %>%
         column_spec(2, color = "white",
               background = spec_color(table_modelo3[,1], begin = .4, end = .8, direction=1)) %>%
@@ -264,7 +267,7 @@ cat("\n")
 cat("\n")
 
 t4 <- table_modelo4 %>%
-  kbl(caption = paste("Resultados da regressão - estudo", 1, "modelo 3")) %>%
+  kbl(caption = paste("Resultados da regressão - estudo", j, "modelo 4")) %>%
   kable_paper("hover", full_width = F, position = "left", font_size = 20) %>%
         column_spec(2, color = "white",
               background = spec_color(table_modelo4[,1], begin = .4, end = .8, direction=1)) %>%
