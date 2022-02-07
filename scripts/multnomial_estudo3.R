@@ -26,6 +26,7 @@ compartilhamento_3_estudos <- compartilhamento_3_estudos %>%
 compartilhamento_3_estudos <- compartilhamento_3_estudos %>%
   mutate(score_id_nac = select(., 27:28) %>% apply(1, sum, na.rm=TRUE))
 
+
 # estudo 3
 compartilhamento3 <- compartilhamento_3_estudos %>%
   filter(!is.na(decisao_compartilhamento)) %>%
